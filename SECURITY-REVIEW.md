@@ -28,7 +28,9 @@ Overrides pin `toml` to 5.0.1 and Jayson's `uuid` to 11.1.1. A clean `npm ci`, t
 - Domain-bound login, HTTPS/secure cookies, session expiry/logout and multi-user isolation on real PostgreSQL.
 - API abuse protection and provider quotas; the included rate limiter is per process, designed for the single instance in the Blueprint.
 - Browser visual/layout and integration QA. The managed browser preview infrastructure was unavailable during development.
-- BABAx issuer mint and Raydium approval/config accounts have been checked read-only. Funded two-stage launch, swaps, LP receipt and issuer eligibility remain acceptance tasks. The operator controls the separate stock transaction switch.
+- BABA issuer mint and Meteora DBC badge verified on mainnet. Atomic creation and an existing BABA-curve buy passed unsigned mainnet simulation; no transaction was submitted. Funded create/buy/sell/graduation and fee/LP-lock acceptance remain outstanding. New BABAx upfront-liquidity launches are disabled; legacy records retain their original adapter.
+- Graduation partially signs only ephemeral position NFT accounts. The connected wallet remains the payer and must approve the exact stored message. No wallet key or platform treasury is held by the server.
+- Market cap uses total supply and current quote/USD conversion; it is not independently verified circulating capitalization. Holder counts require a complete bounded DAS scan and deduplicate nonzero owners, including vault owners.
 
 Mainnet transaction preparation/submission is disabled by default. No server-held user signing key is required or supported.
 

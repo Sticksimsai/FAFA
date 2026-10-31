@@ -1,6 +1,6 @@
 import {BABAX} from './stocks.js';
 // Read-only chain reconciliation: never signs or submits transactions.
-export function orderReconciler({db,pump,stocks}){
+export function orderReconciler({db,pump,stocks,baba}){
  const inflight=new Map();
  async function settle(order){
   if(inflight.has(order.id))return inflight.get(order.id);
@@ -23,7 +23,8 @@ export function orderReconciler({db,pump,stocks}){
       if(info.creator!==order.wallet)throw new Error('Pool creator mismatch');
       d.metadata={...d.metadata,engine:'raydium-cpmm',quoteAsset:'BABAx',quoteMint:BABAX,pool:info.pool,liquidityLocked:false};
      }
-     if(['launch','stock-pool'].includes(order.kind)){
+     if(order.kind==='baba-launch'){const info=await baba.inspect(d.mint,d.metadata);if(info.creator!==order.wallet)throw new Error('Curve creator mismatch')}
+     if(['launch','stock-pool','baba-launch'].includes(order.kind)){
       await db.query('INSERT INTO tokens(mint,wallet,name,symbol,description,image,uri,signature,metadata) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING',[d.mint,order.wallet,d.name,d.symbol,d.description,d.image,d.uri,order.signature,d.metadata||{}]);
       if(order.kind==='stock-pool')await db.query("UPDATE stock_launches SET status='confirmed',pool_signature=$2 WHERE mint=$1 AND wallet=$3",[d.mint,order.signature,order.wallet]);
      }

@@ -1,4 +1,4 @@
-# 发发 FāFā — Pump.fun / Solana integration candidate
+# 发发 FāFā — SOL and BABA bonding-curve launchpad
 
 **Status: implementation candidate, not a completed or audited mainnet launch.** The code includes real SDK transaction builders, wallet signing and backend persistence. No real transaction has been signed or submitted during development. The runtime disables transaction preparation/submission when the operator flags are unset. The existing ChatGPT-hosted demo is separate from this Render application.
 
@@ -21,9 +21,9 @@
 
 1. **Mainnet acceptance testing has not been completed.** Test a low-value create, buy, sell and SOL/USDC swap with your own wallet after configuring your RPC. Check rejected signatures, expiry, retries, a server restart and metadata retrieval. Review the transaction instructions in the wallet. Do not open public transactions before this review.
 2. **Dependency audit findings remain in the upstream Solana/Pump dependency tree.** See `SECURITY-REVIEW.md`. Passing tests are not a security audit.
-3. **BABAx integration is gated separately.** The creator-funded Raydium CPMM connector is implemented, but funded wallet acceptance is still required. Tencent/JD/Baidu remain Coming soon. Issuer eligibility is an operator responsibility; this app does not implement jurisdiction gating. Do not add stocks to the generic swap allowlist as a shortcut.
-4. **Only SOL-quoted Pump curves and SOL-paired creation are supported in this release.** Pump quote-asset capabilities can change. Other quote mints are rejected by this adapter. USDC in Jupiter does not imply USDC Pump launches.
-5. **Graduated coins require an operator-verified Jupiter allowlist entry and an available route.** Direct PumpSwap pool trading and global token discovery/indexing are not implemented. The token page charts decoded confirmed trades from a bounded RPC window. It is not a complete historical index or global market feed. The global graduated filter remains unavailable.
+3. **BABA integration is gated separately.** The Meteora DBC connector uses Backpack BABA; funded wallet acceptance remains outstanding. Tencent/JD/Baidu remain Coming soon. Issuer eligibility is an operator responsibility; this app does not implement jurisdiction gating. Do not add stocks to the generic swap allowlist as a shortcut.
+4. **The Pump adapter supports SOL; BABA uses a separate Meteora DBC adapter.** Pump quote-asset capabilities can change. Other quote mints are rejected by this adapter. USDC in Jupiter does not imply USDC Pump launches.
+5. **Graduated Pump coins require an operator-verified Jupiter allowlist entry and an available route.** Direct PumpSwap pool trading and global token discovery/indexing are not implemented. The token page charts decoded confirmed trades from a bounded RPC window. It is not a complete historical index or global market feed. The global graduated filter remains unavailable.
 6. **Token metadata/images are immutable records hosted at APP_ORIGIN.** They are not IPFS-pinned. Keep the origin/domain stable and PostgreSQL backed up for as long as issued tokens exist. Image hosting and database quotas need operational monitoring.
 7. A single server instance is configured: rate limits are in memory. Add a shared rate-limit store before horizontal scaling. Database rows are durable but order confirmation currently occurs when an authenticated user checks history/status; no independent indexer/reconciler is deployed.
 8. Browser wallet / mobile / visual E2E testing has not been completed in this environment. Phantom and Solflare extensions/in-wallet browsers are implemented; universal mobile deep links and a full Wallet Standard chooser are not.
@@ -136,22 +136,31 @@ Wallet login now separates provider connection from a user-clicked message-signi
 
 ## Quote-asset selection
 
-Create supports SOL/Pump and BABAx/Raydium CPMM. BABAx requires both transaction flags, issuer/mint/pool readiness and creator funds. The app never substitutes SOL for a selected stock quote.
+Create supports SOL/Pump and BABA/Meteora DBC. BABA requires both transaction flags and live issuer/mint/badge readiness. Creators pay SOL costs, with no initial BABA deposit. The app never substitutes SOL for a selected stock quote.
 
 Bundled artwork under /assets now falls through to static hosting when its path is not a database-upload UUID. A regression test checks the actual WebP response.
 
-## Creator-funded BABAx launches
+## BABA-quoted bonding curves
 
-- Exact issuer mint: `XsJBX1kSf58ymLVKFSm2MkbLtsPiVRMWTvkvF7TSiVT` (issuer API `https://api.xstocks.fi/api/v2/public/assets/BABAx`).
-- `GET /api/launch/readiness` checks the mainnet genesis, Token-2022 mint, current multiplier/pause/hook state, Raydium support-mint account and pool configuration.
-- Creator connects Phantom or Solflare and signs in. No wallet private key is configured in Render. The browser holds the temporary new-mint signer until signing.
-- Creator chooses BABAx liquidity. Supply is fixed at 1 billion tokens with 6 decimals; all supply enters the pool. LP tokens belong to the creator and are **not locked**.
-- Step 1 signs a Token-2022 mint transaction, locks metadata and revokes mint authority. Step 2 signs the pool creation and deposit. These are separate irreversible transactions: if step 2 fails, the minted tokens remain in the creator wallet. The pending-launch panel resumes pool creation.
-- The creator funds BABAx plus SOL. Raydium pool fee is read onchain (observed 0.15 SOL on 2026-10-31); rent and network fees are additional. FAFA platform fee is zero. This is not the previously proposed 0.5% FAFA fee.
-- Token records become public only after the pool transaction confirms. The terminal uses the canonical pool, onchain swap events and direct Raydium swaps; it does not depend on Jupiter indexing the new pool. Historical BABAx chart values use the current issuer multiplier.
-- Transactions are simulated, bound to the authenticated wallet and stored message, and signed by the creator. Stock routes remain off until `TRANSACTIONS_ENABLED=true` and `STOCK_LAUNCHES_ENABLED=true`.
+- Exact Backpack Alibaba mint: `BABANGA4JE7Kkam4nTrALAwAVgsNJUuFJnnkF7S16BZp`, 6 decimals. This is BABA, not Backed BABAx.
+- Official Meteora DBC SDK 2.0.0 builds an atomic config + Token-2022 token + curve creation. The connected wallet pays SOL costs. The browser creates the temporary mint/config signers; no BABA is deposited at creation. Creation packet simulated successfully on mainnet at 1,056 bytes without submitting a transaction.
+- Supply: 1 billion, immutable metadata, 6 decimals. Default graduation target: 100 raw-denomination BABA; override `BABA_GRADUATION_TARGET` before creating new launches. Existing onchain configurations do not change. Quote display follows the current issuer multiplier.
+- Fixed trading fee: 1%; protocol receives its program-defined share and the creator receives the remaining trading fee. FAFA additional fee: 0. No platform fee wallet is configured.
+- Buyers pay BABA and sellers receive BABA. Collected curve reserves fund DAMM v2 liquidity at graduation. All creator LP is permanently locked. The creator can earn fees, not withdraw the locked liquidity principal.
+- The terminal includes wallet-approved graduation if the protocol keeper has not migrated a completed curve. The fee payer pays SOL rent/network costs. The server generates and partially signs ephemeral **position NFT accounts only**; the connected wallet must sign the complete stored transaction. No server-held wallet/payer key exists. Migration builds fit 1,121 bytes in SDK packet validation. Automatic keeper coverage of BABA is not assumed.
+- Curve and graduated pool trades use official SDK quotes, minimum output and simulation. Recorded chart trades are decoded from authenticated program events and matched to the canonical pool.
+- `GET /api/launch/readiness` checks the issuer pause/hook state, Token-2022 mint and the DBC token badge. The badge was verified on mainnet at `3Wz3jsVzXprv9T7MKJzA5dTawikqE3xv5mv6LGuegZ44`. Changed transfer-fee/hook rules stop new transactions for review.
+- `POST /api/baba/trade/prepare` and `POST /api/baba/:mint/graduate` require an authenticated wallet and a confirmed FAFA BABA token record. No arbitrary caller-supplied pool/config is accepted.
+- New BABAx upfront-liquidity launches return HTTP 410. Legacy confirmed BABAx records keep their original mint, engine, trading route and pending-pool recovery; no historical token is relabelled.
+- `TRANSACTIONS_ENABLED=true` and `STOCK_LAUNCHES_ENABLED=true` are required. No new private key or treasury setting is needed.
 
-Before public activation, deploy to a restricted environment, inspect readiness, connect a funded owner-controlled wallet and complete both signatures. Check fee debit, metadata/authority locks, LP receipt, final token link, buy/sell and recovery after an interrupted pool step. Automated tests and read-only mainnet checks do not replace this funded acceptance run. Existing issuer eligibility restrictions still apply.
+Creation simulation and automated tests do not establish a completed funded mainnet lifecycle. Wallet create/buy/sell/graduation acceptance remains outstanding; no development transaction has been submitted.
+
+## USD valuation, holders and contract address
+
+The terminal shows estimated USD market cap (last loaded trade × current quote/USD × total token supply, i.e. fully diluted valuation). The default chart converts candles using the current quote/USD rate; it is not historical FX data. Switch to native quote price at any time. USD conversion uses the highest-liquidity DexScreener pool whose base mint exactly matches the quote mint, cached for 30 seconds.
+
+Holder counts use the existing Helius RPC's DAS `getTokenAccounts`, paginated and deduplicated by owner with nonzero balance, including protocol vault owners. The result is cached for two minutes. Scans over 10,000 accounts, unavailable indexers, and missing USD prices show unavailable rather than false zeros or partial totals. The full CA is visible and copyable. No additional API key is required when `SOLANA_RPC_URL` is a Helius endpoint.
 
 ## Production domain and status
 
