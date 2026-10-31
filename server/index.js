@@ -1,3 +1,4 @@
+import {cardMarketService} from './card-market.js';
 import {curveQuoteAsset} from '../shared/quote-assets.js';
 import {requireRedEnvelopeReady,redEnvelopeService} from './red-envelope.js';
 import {featuredRecord,withFeaturedToken,FAFA_MINT} from './featured-token.js';
@@ -34,6 +35,7 @@ const baba=babaService(pump),babaMarket=babaMarketService(pump,baba),metrics=tok
 const fafa=babaService(pump,{quoteAsset:'FAFA'}),fafaMarket=babaMarketService(pump,fafa);
 const curveService=metadata=>curveQuoteAsset(metadata)==='FAFA'?fafa:baba;
 const curveMarket=metadata=>curveQuoteAsset(metadata)==='FAFA'?fafaMarket:babaMarket;
+const cardMarket=cardMarketService({loadMarket:(mint,record)=>record.metadata?.engine===BABA_ENGINE?curveMarket(record.metadata).load(mint,record.metadata):record.metadata?.engine==='raydium-cpmm'?stockMarket.load(mint):market.load(mint),loadMetrics:(mint,record)=>metrics.load(mint,record.metadata?.quoteMint)});
 const rewards=redEnvelopeService({connection:pump.connection,db});
 const reconciler=orderReconciler({db,pump,stocks,rewards,baba:{inspect:(mint,metadata)=>curveService(metadata).inspect(mint,metadata)}});
 const stockEnabled=process.env.STOCK_LAUNCHES_ENABLED==='true';
@@ -77,6 +79,7 @@ app.post('/api/baba/trade/prepare',auth,active,async(req,res)=>{const d=z.object
 app.post('/api/baba/:mint/graduate',auth,active,async(req,res)=>{const mint=address.parse(req.params.mint),metadata=await babaRecord(mint);if(curveQuoteAsset(metadata)==='BABA')stockActive();res.json(await storeOrder(req.wallet,'baba-graduate',await curveService(metadata).graduate({wallet:req.wallet,mint},metadata),{mint}))});
 app.get('/api/token/:mint/red-envelope/snapshot/:sequence',async(req,res)=>{const mint=address.parse(req.params.mint),sequence=z.string().regex(/^(0|[1-9][0-9]{0,18})$/).parse(req.params.sequence);const row=(await db.query('SELECT root,snapshot_slot,holders,begin_signature FROM red_envelope_snapshots WHERE mint=$1 AND sequence=$2',[mint,sequence])).rows[0];if(!row)throw fail(404,'Snapshot not found');res.json({mint,sequence,...row})});
 app.get('/api/token/:mint/red-envelope',async(req,res)=>{const mint=address.parse(req.params.mint);const record=(await db.query('SELECT metadata FROM tokens WHERE mint=$1',[mint])).rows[0]||featuredRecord(mint);if(!record)throw fail(404,'Token not found');res.json(await rewards.status(mint,record.metadata))});
+app.get('/api/token/:mint/summary',rateLimit({windowMs:60000,limit:60}),async(req,res)=>{const mint=address.parse(req.params.mint);const record=(await db.query('SELECT metadata FROM tokens WHERE mint=$1',[mint])).rows[0]||featuredRecord(mint);if(!record)throw fail(404,'Confirmed token not found');res.json(await cardMarket(mint,record))});
 app.get('/api/token/:mint/metrics',rateLimit({windowMs:60000,limit:20}),async(req,res)=>{const mint=address.parse(req.params.mint);const record=(await db.query('SELECT metadata FROM tokens WHERE mint=$1',[mint])).rows[0];res.json(await metrics.load(mint,record?.metadata?.quoteMint||featuredRecord(mint)?.metadata.quoteMint))});
 app.get('/api/balance/:wallet',async(req,res)=>{const key=new PublicKey(address.parse(req.params.wallet));res.json({lamports:await pump.connection.getBalance(key,'confirmed')})});
 async function storeOrder(wallet,kind,built,details){const id=randomUUID();await db.query("INSERT INTO orders(id,wallet,kind,message,transaction,details,blockhash,last_valid_height,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,now()+interval '60 seconds')",[id,wallet,kind,built.message,built.transaction,{...details,quote:built.quote,networkFeeLamports:built.networkFeeLamports},built.blockhash||null,built.lastValidBlockHeight||null]);return {id,kind,transaction:built.transaction,quote:built.quote,expiresAt:Date.now()+60000,...details,quote:built.quote,networkFeeLamports:built.networkFeeLamports}}
