@@ -130,18 +130,18 @@ pub fn select_winner(random:&[u8;64],count:u32)->Result<u32>{
 
 #[derive(Accounts)]
 pub struct UnwrapNative<'info>{
-    #[account(mut,seeds=[b"red-envelope",vault.mint.as_ref()],bump=vault.bump,constraint=vault.quote_mint==NATIVE)]pub vault:Account<'info,Vault>,
-    #[account(address=NATIVE)]pub quote_mint:InterfaceAccount<'info,Mint>,
-    #[account(mut,associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:InterfaceAccount<'info,TokenAccount>,
+    #[account(mut,seeds=[b"red-envelope",vault.mint.as_ref()],bump=vault.bump,constraint=vault.quote_mint==NATIVE)]pub vault:Box<Account<'info,Vault>>,
+    #[account(address=NATIVE)]pub quote_mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(mut,associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:Box<InterfaceAccount<'info,TokenAccount>>,
     pub token_program:Interface<'info,TokenInterface>
 }
 #[derive(Accounts)]
 pub struct HarvestBaba<'info>{
-    #[account(seeds=[b"red-envelope",vault.mint.as_ref()],bump=vault.bump,constraint=vault.quote_mint==BABA||vault.quote_mint==FAFA)]pub vault:Account<'info,Vault>,
-    #[account(address=vault.mint)]pub base_mint:InterfaceAccount<'info,Mint>,
-    #[account(address=vault.quote_mint)]pub quote_mint:InterfaceAccount<'info,Mint>,
-    #[account(mut,associated_token::mint=base_mint,associated_token::authority=vault,associated_token::token_program=base_token_program)]pub base_vault:InterfaceAccount<'info,TokenAccount>,
-    #[account(mut,associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:InterfaceAccount<'info,TokenAccount>,
+    #[account(seeds=[b"red-envelope",vault.mint.as_ref()],bump=vault.bump,constraint=vault.quote_mint==BABA||vault.quote_mint==FAFA)]pub vault:Box<Account<'info,Vault>>,
+    #[account(address=vault.mint)]pub base_mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(address=vault.quote_mint)]pub quote_mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(mut,associated_token::mint=base_mint,associated_token::authority=vault,associated_token::token_program=base_token_program)]pub base_vault:Box<InterfaceAccount<'info,TokenAccount>>,
+    #[account(mut,associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:Box<InterfaceAccount<'info,TokenAccount>>,
     pub token_program:Interface<'info,TokenInterface>,pub base_token_program:Interface<'info,TokenInterface>,
     /// CHECK: executable plus fixed allowlist and instruction validation in handler.
     #[account(executable)]pub fee_program:UncheckedAccount<'info>
@@ -152,20 +152,20 @@ pub struct Initialize<'info>{
     #[account(constraint = program.programdata_address()? == Some(program_data.key()))]
     pub program:Program<'info,crate::program::FafaRedEnvelope>,
     #[account(constraint = program_data.upgrade_authority_address == Some(authority.key()))]
-    pub program_data:Account<'info,ProgramData>,
-    #[account(init,payer=authority,space=8+Config::INIT_SPACE,seeds=[b"config"],bump)]pub config:Account<'info,Config>,
+    pub program_data:Box<Account<'info,ProgramData>>,
+    #[account(init,payer=authority,space=8+Config::INIT_SPACE,seeds=[b"config"],bump)]pub config:Box<Account<'info,Config>>,
     pub system_program:Program<'info,System>
 }
 #[derive(Accounts)]
 pub struct CreateVault<'info>{
     #[account(mut)]pub creator:Signer<'info>,
     // Requiring the new mint's signature prevents squatting an existing token vault.
-    #[account(signer,constraint=mint.decimals==6 @ ErrorCode::InvalidConfig)]pub mint:InterfaceAccount<'info,Mint>,
-    #[account(seeds=[b"config"],bump)]pub config:Account<'info,Config>,
-    pub quote_mint:InterfaceAccount<'info,Mint>,
-    #[account(init,payer=creator,space=8+Vault::INIT_SPACE,seeds=[b"red-envelope",mint.key().as_ref()],bump)]pub vault:Account<'info,Vault>,
-    #[account(init_if_needed,payer=creator,associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:InterfaceAccount<'info,TokenAccount>,
-    #[account(init_if_needed,payer=creator,associated_token::mint=mint,associated_token::authority=vault,associated_token::token_program=base_token_program)]pub base_vault:InterfaceAccount<'info,TokenAccount>,
+    #[account(signer,constraint=mint.decimals==6 @ ErrorCode::InvalidConfig)]pub mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(seeds=[b"config"],bump)]pub config:Box<Account<'info,Config>>,
+    pub quote_mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(init,payer=creator,space=8+Vault::INIT_SPACE,seeds=[b"red-envelope",mint.key().as_ref()],bump)]pub vault:Box<Account<'info,Vault>>,
+    #[account(init_if_needed,payer=creator,associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:Box<InterfaceAccount<'info,TokenAccount>>,
+    #[account(init_if_needed,payer=creator,associated_token::mint=mint,associated_token::authority=vault,associated_token::token_program=base_token_program)]pub base_vault:Box<InterfaceAccount<'info,TokenAccount>>,
     pub base_token_program:Interface<'info,TokenInterface>,
     pub token_program:Interface<'info,TokenInterface>,pub associated_token_program:Program<'info,AssociatedToken>,pub system_program:Program<'info,System>
 }
@@ -173,14 +173,14 @@ pub struct CreateVault<'info>{
 #[instruction(sequence:u64)]
 pub struct BeginRound<'info>{
     #[account(mut)]pub snapshot_authority:Signer<'info>,
-    #[account(seeds=[b"config"],bump,has_one=snapshot_authority)]pub config:Account<'info,Config>,
-    #[account(mut,seeds=[b"red-envelope",vault.mint.as_ref()],bump=vault.bump)]pub vault:Account<'info,Vault>,
-    #[account(address=vault.quote_mint)]pub quote_mint:InterfaceAccount<'info,Mint>,
-    #[account(associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:InterfaceAccount<'info,TokenAccount>,
-    #[account(address=vault.mint)]pub base_mint:InterfaceAccount<'info,Mint>,
-    #[account(associated_token::mint=base_mint,associated_token::authority=vault,associated_token::token_program=base_token_program)]pub base_vault:InterfaceAccount<'info,TokenAccount>,
+    #[account(seeds=[b"config"],bump,has_one=snapshot_authority)]pub config:Box<Account<'info,Config>>,
+    #[account(mut,seeds=[b"red-envelope",vault.mint.as_ref()],bump=vault.bump)]pub vault:Box<Account<'info,Vault>>,
+    #[account(address=vault.quote_mint)]pub quote_mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:Box<InterfaceAccount<'info,TokenAccount>>,
+    #[account(address=vault.mint)]pub base_mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(associated_token::mint=base_mint,associated_token::authority=vault,associated_token::token_program=base_token_program)]pub base_vault:Box<InterfaceAccount<'info,TokenAccount>>,
     pub base_token_program:Interface<'info,TokenInterface>,
-    #[account(init,payer=snapshot_authority,space=8+Round::INIT_SPACE,seeds=[b"round",vault.key().as_ref(),&sequence.to_le_bytes()],bump)]pub round:Account<'info,Round>,
+    #[account(init,payer=snapshot_authority,space=8+Round::INIT_SPACE,seeds=[b"round",vault.key().as_ref(),&sequence.to_le_bytes()],bump)]pub round:Box<Account<'info,Round>>,
     /// CHECK: exact PDA derived from seed and fresh empty system account checked in handler; ORAO initializes it.
     #[account(mut)]pub randomness:UncheckedAccount<'info>,
     /// CHECK: ORAO CPI validates network state PDA and ownership.
@@ -192,17 +192,17 @@ pub struct BeginRound<'info>{
 #[derive(Accounts)]
 pub struct SettleRound<'info>{
     #[account(mut)]pub payer:Signer<'info>,
-    #[account(mut,seeds=[b"red-envelope",vault.mint.as_ref()],bump=vault.bump)]pub vault:Account<'info,Vault>,
-    #[account(mut,has_one=vault,seeds=[b"round",vault.key().as_ref(),&round.sequence.to_le_bytes()],bump)]pub round:Account<'info,Round>,
-    #[account(address=round.randomness)]pub randomness:Account<'info,RandomnessV2>,
+    #[account(mut,seeds=[b"red-envelope",vault.mint.as_ref()],bump=vault.bump)]pub vault:Box<Account<'info,Vault>>,
+    #[account(mut,has_one=vault,seeds=[b"round",vault.key().as_ref(),&round.sequence.to_le_bytes()],bump)]pub round:Box<Account<'info,Round>>,
+    #[account(address=round.randomness)]pub randomness:Box<Account<'info,RandomnessV2>>,
     /// CHECK: winner is constrained by VRF index and committed Merkle leaf, never caller choice.
     #[account(mut)]pub winner:UncheckedAccount<'info>,
-    #[account(address=vault.quote_mint)]pub quote_mint:InterfaceAccount<'info,Mint>,
-    #[account(mut,associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:InterfaceAccount<'info,TokenAccount>,
-    #[account(init_if_needed,payer=payer,associated_token::mint=quote_mint,associated_token::authority=winner,associated_token::token_program=token_program)]pub winner_tokens:InterfaceAccount<'info,TokenAccount>,
-    #[account(address=vault.mint)]pub base_mint:InterfaceAccount<'info,Mint>,
-    #[account(mut,associated_token::mint=base_mint,associated_token::authority=vault,associated_token::token_program=base_token_program)]pub base_vault:InterfaceAccount<'info,TokenAccount>,
-    #[account(init_if_needed,payer=payer,associated_token::mint=base_mint,associated_token::authority=winner,associated_token::token_program=base_token_program)]pub winner_base_tokens:InterfaceAccount<'info,TokenAccount>,
+    #[account(address=vault.quote_mint)]pub quote_mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(mut,associated_token::mint=quote_mint,associated_token::authority=vault,associated_token::token_program=token_program)]pub quote_vault:Box<InterfaceAccount<'info,TokenAccount>>,
+    #[account(init_if_needed,payer=payer,associated_token::mint=quote_mint,associated_token::authority=winner,associated_token::token_program=token_program)]pub winner_tokens:Box<InterfaceAccount<'info,TokenAccount>>,
+    #[account(address=vault.mint)]pub base_mint:Box<InterfaceAccount<'info,Mint>>,
+    #[account(mut,associated_token::mint=base_mint,associated_token::authority=vault,associated_token::token_program=base_token_program)]pub base_vault:Box<InterfaceAccount<'info,TokenAccount>>,
+    #[account(init_if_needed,payer=payer,associated_token::mint=base_mint,associated_token::authority=winner,associated_token::token_program=base_token_program)]pub winner_base_tokens:Box<InterfaceAccount<'info,TokenAccount>>,
     pub base_token_program:Interface<'info,TokenInterface>,
     pub token_program:Interface<'info,TokenInterface>,pub associated_token_program:Program<'info,AssociatedToken>,pub system_program:Program<'info,System>
 }

@@ -26,6 +26,16 @@ jobs:
           echo "$PWD/solana-release/bin" >> "$GITHUB_PATH"
       - name: Build deployable SBF program (does not deploy)
         run: cargo build-sbf --tools-version v1.52 --manifest-path programs/red-envelope/Cargo.toml --sbf-out-dir target/deploy
+      - name: Record binary digest
+        run: sha256sum target/deploy/fafa_red_envelope.so > target/deploy/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: red-envelope-sbf-candidate
+          path: |
+            target/deploy/fafa_red_envelope.so
+            target/deploy/SHA256SUMS
+            programs/red-envelope/Cargo.lock
+          if-no-files-found: error
       - uses: actions/setup-node@v4
         with:
           node-version: 24
