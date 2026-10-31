@@ -7,7 +7,7 @@ import {createRequire} from 'node:module';
 import path from 'node:path';
 import {LiteSVM,FailedTransactionMetadata} from 'litesvm';
 import {getTransactionDecoder} from '@solana/kit';
-import {Keypair,PublicKey,SystemProgram,TransactionMessage,VersionedTransaction,ComputeBudgetProgram,Ed25519Program,SYSVAR_INSTRUCTIONS_PUBKEY} from '@solana/web3.js';
+import {Keypair,PublicKey,SystemProgram,TransactionMessage,VersionedTransaction,ComputeBudgetProgram,AddressLookupTableProgram,AddressLookupTableAccount,Ed25519Program,SYSVAR_INSTRUCTIONS_PUBKEY} from '@solana/web3.js';
 import {TOKEN_2022_PROGRAM_ID,NATIVE_MINT,MintLayout,AccountLayout,createInitializeMint2Instruction,createMintToInstruction,createTransferCheckedInstruction,getAssociatedTokenAddressSync,unpackAccount} from '@solana/spl-token';
 import {Orao,PROGRAM_ID as ORAO_ID,networkStateAccountAddress} from '@orao-network/solana-vrf';
 import BN from 'bn.js';
@@ -15,7 +15,7 @@ import {DynamicBondingCurveClient,DYNAMIC_BONDING_CURVE_PROGRAM_ID,deriveDbcPool
 import {CpAmm,CP_AMM_PROGRAM_ID,derivePositionNftAccount} from '@meteora-ag/cp-amm-sdk';
 import {babaCurveParameters} from '../../server/baba.js';
 import {rewardFeeInstructions} from '../../server/red-envelope-fees.js';
-import {rewardAddresses,initializeRewardInstruction,createRewardVaultInstruction,beginRoundInstruction,settleRoundInstruction,decodeVault,decodeRound} from '../../server/red-envelope-chain.js';
+import {rewardAddresses,initializeRewardInstruction,createRewardVaultInstruction,beginRoundInstruction,settleRoundInstruction,decodeVault,decodeRound,rewardLookupAddresses} from '../../server/red-envelope-chain.js';
 import {snapshotTree,digest,winnerIndex} from '../../server/red-envelope-snapshot.js';
 import {FAFA_QUOTE_MINT} from '../../shared/quote-assets.js';
 const require=createRequire(import.meta.url),program=new PublicKey(readFileSync('programs/red-envelope/PROGRAM_ID','utf8').trim());
@@ -26,7 +26,8 @@ for(const migrated of [false,true])for(const cycleSeconds of [3600])for(const qu
  for(const k of [creator,keeper,treasury,...holders])svm.airdrop(k.publicKey.toBase58(),50_000_000_000n);
  const account=k=>{const a=svm.getAccount(k.toBase58());return a.exists?{owner:new PublicKey(a.programAddress),data:Buffer.from(a.data),lamports:Number(a.lamports)}:null};
  const put=(key,owner,data,lamports)=>svm.setAccount({address:key.toBase58(),programAddress:owner.toBase58(),data,lamports:lamports??svm.minimumBalanceForRentExemption(BigInt(data.length)),executable:false});
- const send=(ix,signers=[keeper],ok=true)=>{svm.expireBlockhash();const tx=new VersionedTransaction(new TransactionMessage({payerKey:signers[0].publicKey,recentBlockhash:svm.latestBlockhash(),instructions:[ComputeBudgetProgram.setComputeUnitLimit({units:1_400_000}),...ix]}).compileToV0Message());tx.sign(signers);const result=svm.sendTransaction(getTransactionDecoder().decode(tx.serialize()));if(ok)assert.ok(!(result instanceof FailedTransactionMetadata),result instanceof FailedTransactionMetadata?JSON.stringify({error:result.err(),logs:result.meta().logs()}):'');else assert.ok(result instanceof FailedTransactionMetadata,'Expected the contract to reject this transaction');return result};
+ let launchLookup;
+ const send=(ix,signers=[keeper],ok=true,computeUnits=1_200_000)=>{svm.expireBlockhash();const tx=new VersionedTransaction(new TransactionMessage({payerKey:signers[0].publicKey,recentBlockhash:svm.latestBlockhash(),instructions:[ComputeBudgetProgram.setComputeUnitLimit({units:computeUnits}),ComputeBudgetProgram.setComputeUnitPrice({microLamports:10000}),...ix]}).compileToV0Message(launchLookup?[launchLookup]:[]));tx.sign(signers);assert.ok(tx.serialize().length<=1232,`Transaction exceeds packet limit: ${tx.serialize().length}`);const result=svm.sendTransaction(getTransactionDecoder().decode(tx.serialize()));if(ok)assert.ok(!(result instanceof FailedTransactionMetadata),result instanceof FailedTransactionMetadata?JSON.stringify({error:result.err(),logs:result.meta().logs()}):'');else assert.ok(result instanceof FailedTransactionMetadata,'Expected the contract to reject this transaction');return result};
  const a=rewardAddresses(program,mint.publicKey,quote);
  // Model a deployed program owned by the operator, then execute real initialization.
  const programInfo=account(program),programDataKey=new PublicKey(programInfo.data.subarray(4,36)),programData=account(programDataKey);programData.data[12]=1;creator.publicKey.toBuffer().copy(programData.data,13);put(programDataKey,programData.owner,programData.data,BigInt(programData.lamports));
@@ -35,9 +36,16 @@ for(const migrated of [false,true])for(const cycleSeconds of [3600])for(const qu
  if(quote===FAFA_QUOTE_MINT){const f=JSON.parse(readFileSync('test/fixtures/fafa-quote-mint.json','utf8'));put(a.quoteMint,new PublicKey(f.owner),Buffer.from(f.data,'base64'));}
  const connection={commitment:'confirmed',getAccountInfo:async k=>account(k),getMultipleAccountsInfo:async keys=>keys.map(account),getMultipleAccountsInfoAndContext:async keys=>({context:{slot:Number(svm.getClock().slot)},value:keys.map(account)}),getSlot:async()=>Number(svm.getClock().slot),getBlockTime:async()=>Number(svm.getClock().unixTimestamp),getEpochInfo:async()=>({epoch:0}),getAccountInfoAndContext:async k=>({context:{slot:Number(svm.getClock().slot)},value:account(k)})};
  const sdk=new DynamicBondingCurveClient(connection,'confirmed'),config=Keypair.generate();
- const created=await sdk.partner.createConfigAndPool({...babaCurveParameters(100000,{rewardVault:true}),payer:creator.publicKey,config:config.publicKey,feeClaimer:a.vault,leftoverReceiver:creator.publicKey,quoteMint:a.quoteMint,preCreatePoolParam:{baseMint:mint.publicKey,name:'Reward test',symbol:'测试',uri:'https://example.com/test.json',poolCreator:creator.publicKey}});
- for(const ix of created.instructions){const required=new Set(ix.keys.filter(x=>x.isSigner).map(x=>x.pubkey.toBase58()));send([ix],[creator,config,mint].filter((k,i)=>i===0||required.has(k.publicKey.toBase58())));}
- send([createRewardVaultInstruction({programId:program,mint:mint.publicKey,quoteMint:quote,creator:creator.publicKey,cycleSeconds})],[creator,mint]);
+ const created=await sdk.partner.createConfigAndPool({...babaCurveParameters(100000,{rewardVault:true}),payer:creator.publicKey,config:config.publicKey,feeClaimer:a.vault,leftoverReceiver:creator.publicKey,quoteMint:a.quoteMint,preCreatePoolParam:{baseMint:mint.publicKey,name:'发'.repeat(10)+'FA',symbol:'测试币',uri:'https://tryfafa.xyz/api/metadata/'+mint.publicKey.toBase58(),poolCreator:creator.publicKey}});
+ // Create, populate and freeze the same lookup addresses used in production.
+ const lookupClock=svm.getClock();lookupClock.slot=100n;svm.setClock(lookupClock);
+ const [createLookup,lookupKey]=AddressLookupTableProgram.createLookupTable({authority:creator.publicKey,payer:creator.publicKey,recentSlot:0});
+ send([createLookup],[creator]);
+ send([AddressLookupTableProgram.extendLookupTable({lookupTable:lookupKey,authority:creator.publicKey,payer:creator.publicKey,addresses:rewardLookupAddresses(program)})],[creator]);
+ send([AddressLookupTableProgram.freezeLookupTable({lookupTable:lookupKey,authority:creator.publicKey})],[creator]);
+ lookupClock.slot=101n;svm.setClock(lookupClock);
+ launchLookup=new AddressLookupTableAccount({key:lookupKey,state:AddressLookupTableAccount.deserialize(account(lookupKey).data)});
+ send([...created.instructions,createRewardVaultInstruction({programId:program,mint:mint.publicKey,quoteMint:quote,creator:creator.publicKey,cycleSeconds})],[creator,config,mint],true,500000);
  const source=getAssociatedTokenAddressSync(a.quoteMint,creator.publicKey,false,TOKEN_2022_PROGRAM_ID),data=Buffer.alloc(AccountLayout.span);AccountLayout.encode({mint:a.quoteMint,owner:creator.publicKey,amount:500_000_000_000n,delegateOption:0,delegate:PublicKey.default,state:1,isNativeOption:0,isNative:0n,delegatedAmount:0n,closeAuthorityOption:0,closeAuthority:PublicKey.default},data);put(source,TOKEN_2022_PROGRAM_ID,data);
  const pool=deriveDbcPoolAddress(a.quoteMint,mint.publicKey,config.publicKey);
  const swap=await sdk.pool.swap({owner:creator.publicKey,amountIn:new BN('20000000000'),minimumAmountOut:new BN(1),swapBaseForQuote:false,pool,referralTokenAccount:null});send(swap.instructions,[creator]);

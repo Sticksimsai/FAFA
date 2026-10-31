@@ -11,11 +11,11 @@ import {FAFA_QUOTE_MINT} from '../shared/quote-assets.js';
 export function keeperService({connection,db,programId,signer,curveService,lookupTables=[],execute=false}){
  const keeper=signer.publicKey,orao=new Orao({connection,publicKey:keeper});
  async function submit(client,a,sequence,kind,instructions){
-  if(!execute)return {dryRun:true,kind,instructions:instructions.length};
   const latest=await connection.getLatestBlockhash('confirmed');
   const tx=new VersionedTransaction(new TransactionMessage({payerKey:keeper,recentBlockhash:latest.blockhash,instructions:[ComputeBudgetProgram.setComputeUnitLimit({units:1200000}),ComputeBudgetProgram.setComputeUnitPrice({microLamports:10000}),...instructions]}).compileToV0Message(lookupTables));
   if(tx.serialize().length>1232)throw new Error('Reward transaction exceeds packet limit');
   const sim=await connection.simulateTransaction(tx,{sigVerify:false,commitment:'confirmed'});if(sim.value.err)throw new Error('Reward simulation failed: '+JSON.stringify(sim.value.err));
+  if(!execute)return {dryRun:true,kind,instructions:instructions.length,simulation:'passed',unitsConsumed:sim.value.unitsConsumed??null,transactionBytes:tx.serialize().length};
   tx.sign([signer]);const signature=bs58.encode(tx.signatures[0]);
   // Persist signature BEFORE broadcast. On restart, reconcile it before making
   // a new transaction; a timeout is never interpreted as a failed payment.

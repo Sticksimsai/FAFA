@@ -12,7 +12,7 @@ Status: preparation only. No deployment, funding or payout has been submitted.
 ## Remaining release requirements
 
 1. Program identity: `3kFwkbymXkMhjveEyrGfdaDHjqWFwLsih7BLt2GLo3r4`. Its private keypair stays on the owner's Mac at `~/.fafa-wallets/red-envelope-program.json`. Source is bound to this identity; deploy only the rebuilt and tested binary. No deployment is implied by assigning an address.
-2. Complete fee-collection acceptance for Pump SOL and Meteora FAFA, before and after graduation. Passing deposit-to-payout tests does not prove fee collection.
+2. Compiled local acceptance now passes 13 cases: eight cycle/currency payout cases, two FAFA trade-to-fee-to-payout cases (curve and graduated DAMM), and three SOL collection-to-payout cases. FAFA launch and vault creation also execute atomically using an immutable lookup and production compute limit. SOL collection tests seed fee accounts; they do not prove Pump launch/trade fee accrual. A controlled end-to-end launch and fee-routing check remains required before public activation.
 3. Estimate deployment rent and fees from the final binary and current RPC. Fund the deployment wallet accordingly. The keeper also requires SOL for repeated ORAO requests, transaction fees and account rent; one-cycle funding is not a long-term operating budget.
 4. Owner signs deployment with their deployment wallet. Record program ID and deployment transaction. The upgrade authority must match the address above.
 5. Copy `deployment/red-envelope.env.example` to a private environment file outside Git, fill RPC and program ID, then run `node --env-file=/absolute/path/to/private.env scripts/red-envelope-setup.js inspect`. Review the deployed ProgramData hash and set `RED_ENVELOPE_PROGRAM_SHA256`.
@@ -22,3 +22,16 @@ Status: preparation only. No deployment, funding or payout has been submitted.
 9. After acceptance and deployment verification, release the source gate, set RED_ENVELOPE_ENABLED=true on web and worker, and change worker start command to `node scripts/red-envelope-keeper.js --execute`. Verify an enrolled launch, actual fee collection, randomness fulfillment and one finalized payout before advertising live rewards.
 
 Creators choose 15 minutes, 1 hour, 2 hours or 4 hours. Existing tokens are not retroactively enrolled. Keep durable snapshots and action records during rollback so pending rounds remain recoverable.
+
+## Next owner action: check funding (no signing)
+
+From the existing FAFA-setup checkout on the Mac:
+
+```sh
+git pull --ff-only origin feature/red-envelope-acceptance
+node scripts/red-envelope-deploy-check.js red-envelope-build/target/deploy/fafa_red_envelope.so
+```
+
+This verifies the exact reviewed binary hash, mainnet genesis, public wallet balances and live rent requirements. It never reads private keypair files. The conservative planning balance includes temporary buffer rent and a 0.05 SOL fee margin; it is not a guaranteed deployment charge. Use exact-size allocation when deploying this reviewed artifact; default allocation may change the required rent and deployed-data hash.
+
+Do not mark the feature live based on deployment alone. The web service gate, worker configuration, deployed binary/config/lookup verification, funded keeper and controlled finalized payout are separate release requirements.
