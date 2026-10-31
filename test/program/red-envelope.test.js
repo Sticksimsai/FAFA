@@ -1,4 +1,4 @@
-// Executes compiled SBF plus the ORAO binary shipped in its official SDK.
+// Executes compiled SBF plus the pinned deployed ORAO V2 binary.
 // Synthetic mint funding/config accounts are local fixtures, never mainnet state.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,7 +16,7 @@ import {snapshotTree,digest,winnerIndex} from '../../server/red-envelope-snapsho
 import {FAFA_QUOTE_MINT} from '../../shared/quote-assets.js';
 const require=createRequire(import.meta.url),program=new PublicKey(readFileSync('programs/red-envelope/PROGRAM_ID','utf8').trim());
 const binary=process.env.RED_ENVELOPE_SBF||'target/deploy/fafa_red_envelope.so';
-for(const quote of [NATIVE_MINT.toBase58(),FAFA_QUOTE_MINT])test(`compiled vault: ${quote===FAFA_QUOTE_MINT?'FAFA':'SOL'} create → ORAO request → fulfill → one payout`,async()=>{
+for(const cycleSeconds of [900,3600,7200,14400])for(const quote of [NATIVE_MINT.toBase58(),FAFA_QUOTE_MINT])test(`compiled vault: ${quote===FAFA_QUOTE_MINT?'FAFA':'SOL'} ${cycleSeconds}s create → ORAO request → fulfill → one payout`,async()=>{
  const svm=new LiteSVM().withNativeMints();svm.addProgramFromFile(program.toBase58(),binary);svm.addProgramFromFile(ORAO_ID.toBase58(),'test/program/fixtures/orao-mainnet.so');
  const creator=Keypair.generate(),keeper=Keypair.generate(),oracle=Keypair.generate(),treasury=Keypair.generate(),mint=Keypair.generate(),holders=[Keypair.generate(),Keypair.generate(),Keypair.generate()];
  for(const k of [creator,keeper,treasury,...holders])svm.airdrop(k.publicKey.toBase58(),2_000_000_000n);
@@ -29,7 +29,7 @@ for(const quote of [NATIVE_MINT.toBase58(),FAFA_QUOTE_MINT])test(`compiled vault
  send([initializeRewardInstruction({programId:program,authority:keeper.publicKey,snapshotAuthority:keeper.publicKey})],[keeper],false);
  send([initializeRewardInstruction({programId:program,authority:creator.publicKey,snapshotAuthority:keeper.publicKey})],[creator]);
  if(quote===FAFA_QUOTE_MINT){const f=JSON.parse(readFileSync('test/fixtures/fafa-quote-mint.json','utf8'));put(a.quoteMint,new PublicKey(f.owner),Buffer.from(f.data,'base64'));}
- send([SystemProgram.createAccount({fromPubkey:creator.publicKey,newAccountPubkey:mint.publicKey,lamports:Number(svm.minimumBalanceForRentExemption(BigInt(MintLayout.span))),space:MintLayout.span,programId:TOKEN_2022_PROGRAM_ID}),createInitializeMint2Instruction(mint.publicKey,6,creator.publicKey,null,TOKEN_2022_PROGRAM_ID),createRewardVaultInstruction({programId:program,mint:mint.publicKey,quoteMint:quote,creator:creator.publicKey,cycleSeconds:3600})],[creator,mint]);
+ send([SystemProgram.createAccount({fromPubkey:creator.publicKey,newAccountPubkey:mint.publicKey,lamports:Number(svm.minimumBalanceForRentExemption(BigInt(MintLayout.span))),space:MintLayout.span,programId:TOKEN_2022_PROGRAM_ID}),createInitializeMint2Instruction(mint.publicKey,6,creator.publicKey,null,TOKEN_2022_PROGRAM_ID),createRewardVaultInstruction({programId:program,mint:mint.publicKey,quoteMint:quote,creator:creator.publicKey,cycleSeconds})],[creator,mint]);
  assert.equal(decodeVault(account(a.vault),program).pending,false);
  // Real token-program deposit of base-denominated creator fees.
  send([createMintToInstruction(mint.publicKey,a.baseVault,creator.publicKey,5_000_000n,[],TOKEN_2022_PROGRAM_ID)],[creator]);
@@ -37,7 +37,7 @@ for(const quote of [NATIVE_MINT.toBase58(),FAFA_QUOTE_MINT])test(`compiled vault
  else send([SystemProgram.transfer({fromPubkey:creator.publicKey,toPubkey:a.vault,lamports:20_000_000})],[creator]);
  const orao=new Orao({connection:{},publicKey:keeper.publicKey});
  send([await orao.methods.initNetwork(new BN(10000),keeper.publicKey,[oracle.publicKey],null).accountsPartial({payer:keeper.publicKey,networkState:networkStateAccountAddress(),treasury:treasury.publicKey,systemProgram:SystemProgram.programId}).instruction()]);
- const clock=svm.getClock();clock.unixTimestamp+=3601n;clock.slot=1000n;svm.setClock(clock);
+ const clock=svm.getClock();clock.unixTimestamp+=BigInt(cycleSeconds+1);clock.slot=1000n;svm.setClock(clock);
  const tree=snapshotTree({vault:a.vault.toBase58(),sequence:'0',holders:holders.map(x=>({wallet:x.publicKey.toBase58(),balance:'1000000'}))});
  const args={programId:program,mint:mint.publicKey,quoteMint:quote,sequence:0,root:tree.root,count:tree.entries.length,slot:1000,keeper:keeper.publicKey,treasury:treasury.publicKey};
  const wrong=beginRoundInstruction({...args,keeper:creator.publicKey});send([wrong.instruction],[creator],false);
@@ -54,6 +54,6 @@ for(const quote of [NATIVE_MINT.toBase58(),FAFA_QUOTE_MINT])test(`compiled vault
  if(quote===NATIVE_MINT.toBase58())assert.equal(svm.getBalance(winner.wallet)-before,20_000_000n);
  else {const ata=getAssociatedTokenAddressSync(a.quoteMint,new PublicKey(winner.wallet),false,TOKEN_2022_PROGRAM_ID);assert.equal(unpackAccount(ata,account(ata),TOKEN_2022_PROGRAM_ID).amount,150_000_000n);}
  const baseAta=getAssociatedTokenAddressSync(mint.publicKey,new PublicKey(winner.wallet),false,TOKEN_2022_PROGRAM_ID);assert.equal(unpackAccount(baseAta,account(baseAta),TOKEN_2022_PROGRAM_ID).amount,5_000_000n);
- const vault=decodeVault(account(a.vault),program);assert.equal(vault.sequence,'1');assert.equal(vault.pending,false);assert.equal(vault.nextDue,Number(clock.unixTimestamp)+3600);
+ const vault=decodeVault(account(a.vault),program);assert.equal(vault.sequence,'1');assert.equal(vault.pending,false);assert.equal(vault.nextDue,Number(clock.unixTimestamp)+cycleSeconds);
  send([settleRoundInstruction(settleArgs)],[keeper],false); // Cannot pay twice.
 });

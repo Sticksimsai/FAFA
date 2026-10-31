@@ -11,7 +11,7 @@ Status: preparation only. No deployment, funding or payout has been submitted.
 
 ## Remaining release requirements
 
-1. Generate and retain a program identity in the owner's secure local environment. Supply its public address to replace the development placeholder in source; rebuild and rerun contract tests for that identity. Do not use the placeholder or lose the program keypair.
+1. Program identity: `3kFwkbymXkMhjveEyrGfdaDHjqWFwLsih7BLt2GLo3r4`. Its private keypair stays on the owner's Mac at `~/.fafa-wallets/red-envelope-program.json`. Source is bound to this identity; deploy only the rebuilt and tested binary. No deployment is implied by assigning an address.
 2. Complete fee-collection acceptance for Pump SOL and Meteora FAFA, before and after graduation. Passing deposit-to-payout tests does not prove fee collection.
 3. Estimate deployment rent and fees from the final binary and current RPC. Fund the deployment wallet accordingly. The keeper also requires SOL for repeated ORAO requests, transaction fees and account rent; one-cycle funding is not a long-term operating budget.
 4. Owner signs deployment with their deployment wallet. Record program ID and deployment transaction. The upgrade authority must match the address above.
