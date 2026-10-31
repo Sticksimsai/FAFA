@@ -1,9 +1,9 @@
 name: Red envelope program checks
 on:
   push:
-    paths: ['programs/red-envelope/**', '.github/workflows/red-envelope-program.yml']
+    paths: ['programs/red-envelope/**', 'test/program/**', '.github/workflows/red-envelope-program.yml']
   pull_request:
-    paths: ['programs/red-envelope/**', '.github/workflows/red-envelope-program.yml']
+    paths: ['programs/red-envelope/**', 'test/program/**', '.github/workflows/red-envelope-program.yml']
 permissions:
   contents: read
 jobs:
@@ -11,6 +11,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check and test program source (no deployment)
+      - name: Test program source
         working-directory: programs/red-envelope
         run: cargo test
+  sbf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Agave build tools
+        run: |
+          curl --fail --location --retry 3 https://github.com/anza-xyz/agave/releases/download/v2.3.13/solana-release-x86_64-unknown-linux-gnu.tar.bz2 -o agave.tar.bz2
+          echo 'c43539ebdf6942472e8b87635d6ea55f428a51e3d0219f7b6f720fc6b19fade0  agave.tar.bz2' | sha256sum --check
+          tar -xjf agave.tar.bz2
+          echo "$PWD/solana-release/bin" >> "$GITHUB_PATH"
+      - name: Build deployable SBF program (does not deploy)
+        run: cargo build-sbf --manifest-path programs/red-envelope/Cargo.toml --sbf-out-dir target/deploy
+      - name: Record binary digest
+        run: sha256sum target/deploy/fafa_red_envelope.so > target/deploy/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: red-envelope-sbf
+          path: |
+            target/deploy/fafa_red_envelope.so
+            target/deploy/SHA256SUMS
+            programs/red-envelope/Cargo.lock
+          if-no-files-found: error
