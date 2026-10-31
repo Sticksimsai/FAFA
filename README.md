@@ -127,3 +127,9 @@ Six curated naming pairs work without an external service (e.g. Lucky cat â†’ æ‹
 Translations are not automatically shortened or substituted. If a result is longer than the ticker policy or contains non-Han characters, the user must shorten/edit it. The user explicitly applies a valid suggestion; it never overwrites the field automatically.
 
 New endpoints: `POST /api/translate/ticker` (authenticated and rate limited) and `GET /api/token/:mint/record` (confirmed token record, including immutable website/social metadata). The startup migration adds a `metadata` JSONB column to existing `tokens` tables without modifying prior token records.
+
+## Wallet and terminal update
+
+Standalone Swap navigation and its form have been removed. Trading lives at `/token/<mint>`; Jupiter remains an internal route for supported graduated tokens. The terminal includes candle intervals, confirmed trade history refreshed every 15 seconds, buy/sell previews, creator/date/raw metadata for site-created tokens, and metadata on mobile. External Pump mints without a local record show their address and onchain state; external metadata indexing is not implemented.
+
+Wallet login now separates provider connection from a user-clicked message-signing step. Pending requests, provider denial and backend origin errors are distinguished. A provider denial cannot be bypassed: open the extension and review its prompt. Tests do not replace browser extension acceptance testing.
