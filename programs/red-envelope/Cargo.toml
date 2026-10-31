@@ -21,3 +21,5 @@ anchor-spl = { version = "=0.32.1", features = ["associated_token", "token_2022"
 orao-solana-vrf = { version = "=0.7.0", default-features = false, features = ["cpi"] }
 
 solana-sha256-hasher = "=2.3.0"
+
+solana-curve25519 = "=2.3.13"

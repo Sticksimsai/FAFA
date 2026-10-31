@@ -1,4 +1,5 @@
 use solana_sha256_hasher::hashv;
+use solana_curve25519::edwards::{validate_edwards,PodEdwardsPoint};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::{instruction::{Instruction,AccountMeta},program::invoke_signed};
 use anchor_spl::{associated_token::AssociatedToken, token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked, CloseAccount}};
@@ -46,7 +47,7 @@ pub mod fafa_red_envelope {
         Ok(())
     }
     pub fn initialize(ctx: Context<Initialize>, snapshot_authority: Pubkey) -> Result<()> {
-        require!(snapshot_authority.is_on_curve(), ErrorCode::InvalidConfig);
+        require!(validate_edwards(&PodEdwardsPoint(snapshot_authority.to_bytes())), ErrorCode::InvalidConfig);
         ctx.accounts.config.snapshot_authority = snapshot_authority;
         Ok(())
     }
@@ -91,7 +92,7 @@ pub mod fafa_red_envelope {
         require!(v.pending&&!r.paid&&v.sequence==r.sequence,ErrorCode::AlreadyPaid);
         require!(balance>=MIN_HOLDING&&index<r.count&&proof.len()<=20,ErrorCode::InvalidProof);
         let winner=ctx.accounts.winner.key();
-        require!(winner.is_on_curve()&&winner!=v.creator&&winner!=Pubkey::default(),ErrorCode::InvalidProof);
+        require!(validate_edwards(&PodEdwardsPoint(winner.to_bytes()))&&winner!=v.creator&&winner!=Pubkey::default(),ErrorCode::InvalidProof);
         let random=ctx.accounts.randomness.fulfilled().ok_or(ErrorCode::RandomnessPending)?;
         require!(random.seed==r.seed&&random.client==r.requester,ErrorCode::WrongRandomness);
         require!(select_winner(&random.randomness,r.count)?==index,ErrorCode::WrongWinner);

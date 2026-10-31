@@ -41,6 +41,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Fetch and verify pinned ORAO test program
+        run: node scripts/fetch-orao-fixture.js
       - name: Execute compiled vault and ORAO lifecycle tests
         run: node --test test/program/*.test.js
       - name: Record binary digest

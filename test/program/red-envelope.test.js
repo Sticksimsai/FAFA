@@ -17,7 +17,7 @@ import {FAFA_QUOTE_MINT} from '../../shared/quote-assets.js';
 const require=createRequire(import.meta.url),program=new PublicKey(readFileSync('programs/red-envelope/PROGRAM_ID','utf8').trim());
 const binary=process.env.RED_ENVELOPE_SBF||'target/deploy/fafa_red_envelope.so';
 for(const quote of [NATIVE_MINT.toBase58(),FAFA_QUOTE_MINT])test(`compiled vault: ${quote===FAFA_QUOTE_MINT?'FAFA':'SOL'} create → ORAO request → fulfill → one payout`,async()=>{
- const svm=new LiteSVM().withNativeMints();svm.addProgramFromFile(program.toBase58(),binary);svm.addProgramFromFile(ORAO_ID.toBase58(),path.join(path.dirname(require.resolve('@orao-network/solana-vrf')),'orao_vrf.so'));
+ const svm=new LiteSVM().withNativeMints();svm.addProgramFromFile(program.toBase58(),binary);svm.addProgramFromFile(ORAO_ID.toBase58(),'test/program/fixtures/orao-mainnet.so');
  const creator=Keypair.generate(),keeper=Keypair.generate(),oracle=Keypair.generate(),treasury=Keypair.generate(),mint=Keypair.generate(),holders=[Keypair.generate(),Keypair.generate(),Keypair.generate()];
  for(const k of [creator,keeper,treasury,...holders])svm.airdrop(k.publicKey.toBase58(),2_000_000_000n);
  const account=k=>{const a=svm.getAccount(k.toBase58());return a.exists?{owner:new PublicKey(a.programAddress),data:Buffer.from(a.data),lamports:Number(a.lamports)}:null};
