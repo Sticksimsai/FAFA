@@ -1,0 +1,20 @@
+name: Custodial reward checks
+on:
+  push:
+    paths: ['server/custodial*.js', 'scripts/custodial*.js', 'test/program/custodial*.test.js', 'test/custodial*.test.js', 'test/fixtures/**', 'scripts/fetch-fee-fixtures.js', 'package*.json', '.github/workflows/custodial-rewards.yml']
+  pull_request:
+    paths: ['server/custodial*.js', 'scripts/custodial*.js', 'test/program/custodial*.test.js', 'test/custodial*.test.js', 'test/fixtures/**', 'scripts/fetch-fee-fixtures.js', 'package*.json', '.github/workflows/custodial-rewards.yml']
+permissions:
+  contents: read
+jobs:
+  protocol-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/fetch-fee-fixtures.js
+      - run: node --test test/custodial-rewards.test.js test/program/custodial*.test.js
