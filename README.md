@@ -21,7 +21,7 @@
 
 1. **Mainnet acceptance testing has not been completed.** Test a low-value create, buy, sell and SOL/USDC swap with your own wallet after configuring your RPC. Check rejected signatures, expiry, retries, a server restart and metadata retrieval. Review the transaction instructions in the wallet. Do not open public transactions before this review.
 2. **Dependency audit findings remain in the upstream Solana/Pump dependency tree.** See `SECURITY-REVIEW.md`. Passing tests are not a security audit.
-3. **Chinese stock token trading remains disabled.** BABAx is an integration candidate; Tencent/JD/Baidu labels are unverified concepts. There is no verified stock mint registry, issuer eligibility implementation, or stock pool integration. Do not add stocks to the generic allowlist as a shortcut.
+3. **BABAx integration is gated separately.** The creator-funded Raydium CPMM connector is implemented, but funded wallet acceptance is still required. Tencent/JD/Baidu remain Coming soon. Issuer eligibility is an operator responsibility; this app does not implement jurisdiction gating. Do not add stocks to the generic swap allowlist as a shortcut.
 4. **Only SOL-quoted Pump curves and SOL-paired creation are supported in this release.** Pump quote-asset capabilities can change. Other quote mints are rejected by this adapter. USDC in Jupiter does not imply USDC Pump launches.
 5. **Graduated coins require an operator-verified Jupiter allowlist entry and an available route.** Direct PumpSwap pool trading and global token discovery/indexing are not implemented. The token page charts decoded confirmed trades from a bounded RPC window. It is not a complete historical index or global market feed. The global graduated filter remains unavailable.
 6. **Token metadata/images are immutable records hosted at APP_ORIGIN.** They are not IPFS-pinned. Keep the origin/domain stable and PostgreSQL backed up for as long as issued tokens exist. Image hosting and database quotas need operational monitoring.
@@ -136,6 +136,19 @@ Wallet login now separates provider connection from a user-clicked message-signi
 
 ## Quote-asset selection
 
-Create supports explicit SOL selection and a BABAx stock-pair draft option. BABAx is not enabled for issuance or trading; choosing it updates the preview and can be saved, while both client and server block launch. A supported stock-quote launch/pool adapter, verified issuer mint and asset eligibility handling are still required. The app never substitutes SOL for a selected stock quote.
+Create supports SOL/Pump and BABAx/Raydium CPMM. BABAx requires both transaction flags, issuer/mint/pool readiness and creator funds. The app never substitutes SOL for a selected stock quote.
 
 Bundled artwork under /assets now falls through to static hosting when its path is not a database-upload UUID. A regression test checks the actual WebP response.
+
+## Creator-funded BABAx launches
+
+- Exact issuer mint: `XsJBX1kSf58ymLVKFSm2MkbLtsPiVRMWTvkvF7TSiVT` (issuer API `https://api.xstocks.fi/api/v2/public/assets/BABAx`).
+- `GET /api/launch/readiness` checks the mainnet genesis, Token-2022 mint, current multiplier/pause/hook state, Raydium support-mint account and pool configuration.
+- Creator connects Phantom or Solflare and signs in. No wallet private key is configured in Render. The browser holds the temporary new-mint signer until signing.
+- Creator chooses BABAx liquidity. Supply is fixed at 1 billion tokens with 6 decimals; all supply enters the pool. LP tokens belong to the creator and are **not locked**.
+- Step 1 signs a Token-2022 mint transaction, locks metadata and revokes mint authority. Step 2 signs the pool creation and deposit. These are separate irreversible transactions: if step 2 fails, the minted tokens remain in the creator wallet. The pending-launch panel resumes pool creation.
+- The creator funds BABAx plus SOL. Raydium pool fee is read onchain (observed 0.15 SOL on 2026-10-31); rent and network fees are additional. FAFA platform fee is zero. This is not the previously proposed 0.5% FAFA fee.
+- Token records become public only after the pool transaction confirms. The terminal uses the canonical pool, onchain swap events and direct Raydium swaps; it does not depend on Jupiter indexing the new pool. Historical BABAx chart values use the current issuer multiplier.
+- Transactions are simulated, bound to the authenticated wallet and stored message, and signed by the creator. Stock routes remain off until `TRANSACTIONS_ENABLED=true` and `STOCK_LAUNCHES_ENABLED=true`.
+
+Before public activation, deploy to a restricted environment, inspect readiness, connect a funded owner-controlled wallet and complete both signatures. Check fee debit, metadata/authority locks, LP receipt, final token link, buy/sell and recovery after an interrupted pool step. Automated tests and read-only mainnet checks do not replace this funded acceptance run. Existing issuer eligibility restrictions still apply.

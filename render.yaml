@@ -24,6 +24,8 @@ services:
         sync: false
       - key: TRANSACTIONS_ENABLED
         value: "false"
+      - key: STOCK_LAUNCHES_ENABLED
+        value: "false"
       - key: SWAP_MINT_ALLOWLIST
         value: So11111111111111111111111111111111111111112,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 databases:
