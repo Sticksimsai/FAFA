@@ -8,12 +8,12 @@ import {rewardAddresses,readRewardVault,decodeRound,beginRoundInstruction,settle
 import {rewardFeeInstructions} from './red-envelope-fees.js';
 import {FAFA_QUOTE_MINT} from '../shared/quote-assets.js';
 
-export function keeperService({connection,db,programId,signer,curveService,execute=false}){
+export function keeperService({connection,db,programId,signer,curveService,lookupTables=[],execute=false}){
  const keeper=signer.publicKey,orao=new Orao({connection,publicKey:keeper});
  async function submit(client,a,sequence,kind,instructions){
   if(!execute)return {dryRun:true,kind,instructions:instructions.length};
   const latest=await connection.getLatestBlockhash('confirmed');
-  const tx=new VersionedTransaction(new TransactionMessage({payerKey:keeper,recentBlockhash:latest.blockhash,instructions:[ComputeBudgetProgram.setComputeUnitLimit({units:1200000}),ComputeBudgetProgram.setComputeUnitPrice({microLamports:10000}),...instructions]}).compileToV0Message());
+  const tx=new VersionedTransaction(new TransactionMessage({payerKey:keeper,recentBlockhash:latest.blockhash,instructions:[ComputeBudgetProgram.setComputeUnitLimit({units:1200000}),ComputeBudgetProgram.setComputeUnitPrice({microLamports:10000}),...instructions]}).compileToV0Message(lookupTables));
   if(tx.serialize().length>1232)throw new Error('Reward transaction exceeds packet limit');
   const sim=await connection.simulateTransaction(tx,{sigVerify:false,commitment:'confirmed'});if(sim.value.err)throw new Error('Reward simulation failed: '+JSON.stringify(sim.value.err));
   tx.sign([signer]);const signature=bs58.encode(tx.signatures[0]);
@@ -25,7 +25,7 @@ export function keeperService({connection,db,programId,signer,curveService,execu
   try{await connection.sendRawTransaction(tx.serialize(),{skipPreflight:false,maxRetries:3})}catch{return {status:'submission-uncertain',signature}}
   return {status:'submitted',signature};
  }
- async function reconcile(client,vault){const pending=(await client.query("SELECT * FROM red_envelope_actions WHERE vault=$1 AND status='pending'",[vault])).rows;let waiting=false;for(const action of pending){const status=(await connection.getSignatureStatuses([action.signature],{searchTransactionHistory:true})).value[0];let state='pending';if(status?.err)state='failed';else if(status?.confirmationStatus==='finalized')state='confirmed';else if(!status&&await connection.getBlockHeight('finalized')>Number(action.last_valid_height))state='expired';if(state==='pending')waiting=true;else await client.query('UPDATE red_envelope_actions SET status=$2 WHERE id=$1',[action.id,state]);}return waiting;}
+ async function reconcile(client,vault){const pending=(await client.query("SELECT * FROM red_envelope_actions WHERE vault=$1 AND status='pending'",[vault])).rows;let waiting=false;for(const action of pending){const status=(await connection.getSignatureStatuses([action.signature],{searchTransactionHistory:true})).value[0];let state='pending';if(status?.confirmationStatus==='finalized')state=status.err?'failed':'confirmed';else if(!status&&await connection.getBlockHeight('finalized')>Number(action.last_valid_height))state='expired';if(state==='pending')waiting=true;else await client.query('UPDATE red_envelope_actions SET status=$2 WHERE id=$1',[action.id,state]);}return waiting;}
  async function cycle(record){const rules=record.metadata?.redEnvelope;if(!rules||rules.programId!==programId)return {status:'not-enrolled'};const a=rewardAddresses(programId,record.mint,rules.quoteMint);if(rules.vault!==a.vault.toBase58())throw new Error('Reward vault metadata mismatch');const client=await db.connect();let locked=false;
   try{locked=(await client.query('SELECT pg_try_advisory_lock(hashtextextended($1,0)) AS locked',[a.vault.toBase58()])).rows[0].locked;if(!locked)return {status:'another-worker'};
    if(await reconcile(client,a.vault.toBase58()))return {status:'awaiting-finality'};

@@ -100,19 +100,21 @@ pub mod fafa_red_envelope {
         for sibling in proof {node=if i%2==0 {hashv(&[b"fafa-node-v1".as_slice(),&node,&sibling]).to_bytes()}else{hashv(&[b"fafa-node-v1".as_slice(),&sibling,&node]).to_bytes()};i/=2;}
         require!(node==r.root,ErrorCode::InvalidProof);
         let reward=r.reward;let base_reward=r.base_reward;let sequence=r.sequence;
-        if v.quote_mint==NATIVE {
-            let vault_info=ctx.accounts.vault.to_account_info();let winner_info=ctx.accounts.winner.to_account_info();
-            let remaining=vault_info.lamports().checked_sub(reward).ok_or(ErrorCode::InsufficientReward)?;
-            require!(remaining>=Rent::get()?.minimum_balance(8+Vault::INIT_SPACE),ErrorCode::InsufficientReward);
-            **vault_info.try_borrow_mut_lamports()?=remaining;
-            **winner_info.try_borrow_mut_lamports()?=winner_info.lamports().checked_add(reward).ok_or(ErrorCode::Overflow)?;
-        }else{
+        if v.quote_mint!=NATIVE {
             let mint=v.mint;let bump=[v.bump];let seeds:&[&[u8]]=&[b"red-envelope",mint.as_ref(),&bump];
             token_interface::transfer_checked(CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(),TransferChecked{from:ctx.accounts.quote_vault.to_account_info(),mint:ctx.accounts.quote_mint.to_account_info(),to:ctx.accounts.winner_tokens.to_account_info(),authority:ctx.accounts.vault.to_account_info()},&[seeds]),reward,ctx.accounts.quote_mint.decimals)?;
         }
         if base_reward>0 {
             let mint=v.mint;let bump=[v.bump];let seeds:&[&[u8]]=&[b"red-envelope",mint.as_ref(),&bump];
             token_interface::transfer_checked(CpiContext::new_with_signer(ctx.accounts.base_token_program.to_account_info(),TransferChecked{from:ctx.accounts.base_vault.to_account_info(),mint:ctx.accounts.base_mint.to_account_info(),to:ctx.accounts.winner_base_tokens.to_account_info(),authority:ctx.accounts.vault.to_account_info()},&[seeds]),base_reward,ctx.accounts.base_mint.decimals)?;
+        }
+        // Complete token CPIs before directly moving native lamports.
+        if v.quote_mint==NATIVE {
+            let vault_info=ctx.accounts.vault.to_account_info();let winner_info=ctx.accounts.winner.to_account_info();
+            let remaining=vault_info.lamports().checked_sub(reward).ok_or(ErrorCode::InsufficientReward)?;
+            require!(remaining>=Rent::get()?.minimum_balance(8+Vault::INIT_SPACE),ErrorCode::InsufficientReward);
+            **vault_info.try_borrow_mut_lamports()?=remaining;
+            **winner_info.try_borrow_mut_lamports()?=winner_info.lamports().checked_add(reward).ok_or(ErrorCode::Overflow)?;
         }
         let v=&mut ctx.accounts.vault;v.pending=false;v.sequence=v.sequence.checked_add(1).ok_or(ErrorCode::Overflow)?;
         v.next_due=Clock::get()?.unix_timestamp.checked_add(v.cycle_seconds).ok_or(ErrorCode::Overflow)?;

@@ -11,7 +11,7 @@ import {Keypair,PublicKey,SystemProgram,TransactionMessage,VersionedTransaction,
 import {TOKEN_2022_PROGRAM_ID,NATIVE_MINT,MintLayout,AccountLayout,createInitializeMint2Instruction,createMintToInstruction,createTransferCheckedInstruction,getAssociatedTokenAddressSync,unpackAccount} from '@solana/spl-token';
 import {Orao,PROGRAM_ID as ORAO_ID,networkStateAccountAddress} from '@orao-network/solana-vrf';
 import BN from 'bn.js';
-import {rewardAddresses,createRewardVaultInstruction,beginRoundInstruction,settleRoundInstruction,decodeVault,decodeRound} from '../../server/red-envelope-chain.js';
+import {rewardAddresses,initializeRewardInstruction,createRewardVaultInstruction,beginRoundInstruction,settleRoundInstruction,decodeVault,decodeRound} from '../../server/red-envelope-chain.js';
 import {snapshotTree,digest,winnerIndex} from '../../server/red-envelope-snapshot.js';
 import {FAFA_QUOTE_MINT} from '../../shared/quote-assets.js';
 const require=createRequire(import.meta.url),program=new PublicKey(readFileSync('programs/red-envelope/PROGRAM_ID','utf8').trim());
@@ -24,8 +24,10 @@ for(const quote of [NATIVE_MINT.toBase58(),FAFA_QUOTE_MINT])test(`compiled vault
  const put=(key,owner,data,lamports)=>svm.setAccount({address:key.toBase58(),programAddress:owner.toBase58(),data,lamports:lamports??svm.minimumBalanceForRentExemption(BigInt(data.length)),executable:false});
  const send=(ix,signers=[keeper],ok=true)=>{svm.expireBlockhash();const tx=new VersionedTransaction(new TransactionMessage({payerKey:signers[0].publicKey,recentBlockhash:svm.latestBlockhash(),instructions:[ComputeBudgetProgram.setComputeUnitLimit({units:1_400_000}),...ix]}).compileToV0Message());tx.sign(signers);const result=svm.sendTransaction(getTransactionDecoder().decode(tx.serialize()));if(ok)assert.ok(!(result instanceof FailedTransactionMetadata),result instanceof FailedTransactionMetadata?JSON.stringify({error:result.err(),logs:result.meta().logs()}):'');else assert.ok(result instanceof FailedTransactionMetadata,'Expected the contract to reject this transaction');return result};
  const a=rewardAddresses(program,mint.publicKey,quote);
- // Config fixture isolates payout testing from upgradeable-loader deployment.
- put(a.config,program,Buffer.concat([digest(Buffer.from('account:Config')).subarray(0,8),keeper.publicKey.toBuffer()]));
+ // Model a deployed program owned by the operator, then execute real initialization.
+ const programInfo=account(program),programDataKey=new PublicKey(programInfo.data.subarray(4,36)),programData=account(programDataKey);programData.data[12]=1;creator.publicKey.toBuffer().copy(programData.data,13);put(programDataKey,programData.owner,programData.data,BigInt(programData.lamports));
+ send([initializeRewardInstruction({programId:program,authority:keeper.publicKey,snapshotAuthority:keeper.publicKey})],[keeper],false);
+ send([initializeRewardInstruction({programId:program,authority:creator.publicKey,snapshotAuthority:keeper.publicKey})],[creator]);
  if(quote===FAFA_QUOTE_MINT){const f=JSON.parse(readFileSync('test/fixtures/fafa-quote-mint.json','utf8'));put(a.quoteMint,new PublicKey(f.owner),Buffer.from(f.data,'base64'));}
  send([SystemProgram.createAccount({fromPubkey:creator.publicKey,newAccountPubkey:mint.publicKey,lamports:Number(svm.minimumBalanceForRentExemption(BigInt(MintLayout.span))),space:MintLayout.span,programId:TOKEN_2022_PROGRAM_ID}),createInitializeMint2Instruction(mint.publicKey,6,creator.publicKey,null,TOKEN_2022_PROGRAM_ID),createRewardVaultInstruction({programId:program,mint:mint.publicKey,quoteMint:quote,creator:creator.publicKey,cycleSeconds:3600})],[creator,mint]);
  assert.equal(decodeVault(account(a.vault),program).pending,false);
@@ -46,6 +48,7 @@ for(const quote of [NATIVE_MINT.toBase58(),FAFA_QUOTE_MINT])test(`compiled vault
  const fulfilled=orao.coder.accounts.decode('randomnessV2',account(begin.randomness).data).request.fulfilled[0];const index=winnerIndex(fulfilled.randomness,tree.entries.length),winner=tree.entries[index];
  const settleArgs={programId:program,mint:mint.publicKey,quoteMint:quote,sequence:0,randomness:begin.randomness,winner:winner.wallet,index,balance:winner.balance,proof:tree.proof(index),payer:keeper.publicKey};
  send([settleRoundInstruction({...settleArgs,balance:'2000000'})],[keeper],false);
+ const other=tree.entries[(index+1)%tree.entries.length];send([settleRoundInstruction({...settleArgs,winner:other.wallet,index:other.index,balance:other.balance,proof:tree.proof(other.index)})],[keeper],false);
  const before=svm.getBalance(winner.wallet);send([settleRoundInstruction(settleArgs)]);
  const paid=decodeRound(account(a.round),program);assert.equal(paid.paid,true);assert.equal(paid.winner,winner.wallet);
  if(quote===NATIVE_MINT.toBase58())assert.equal(svm.getBalance(winner.wallet)-before,20_000_000n);

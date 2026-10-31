@@ -8,3 +8,10 @@ public/live.js
 public/token.js
 public/create.js
 public/ui.js
+
+# Local compiled-program fixtures and CI artifacts; never deploy test identities.
+/test/program/fixtures/*.so
+/candidate/
+/candidate.zip
+/target/
+/programs/**/target/
