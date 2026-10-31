@@ -1,0 +1,16 @@
+name: Red envelope program checks
+on:
+  push:
+    paths: ['programs/red-envelope/**', '.github/workflows/red-envelope-program.yml']
+  pull_request:
+    paths: ['programs/red-envelope/**', '.github/workflows/red-envelope-program.yml']
+permissions:
+  contents: read
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check and test program source (no deployment)
+        working-directory: programs/red-envelope
+        run: cargo test

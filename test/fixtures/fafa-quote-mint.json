@@ -1,0 +1,32 @@
+{
+  "mint": "CcSRXUReR3VVG92C4rE8FqsLomzwmH6Dn1WhTGebpump",
+  "owner": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+  "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADmycduZ2AwAGAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARIAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKyEoVXunwhh5UTMDoLXQHdCGcMZwBzW+XRgcQqIJc/PEwCsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArIShVe6fCGHlRMwOgtdAd0IZwxnAHNb5dGBxCoglz88GAAAARsSARsSABgAAAOWPkeWPkVAAAABodHRwczovL2lwZnMuaW8vaXBmcy9iYWZrcmVpZ3VmbXYyZG40aGtwMzRnZGQ3eWNnZW42YWFoamtwNXEybHE0dnB6Y291bGVubnVsNmFiNAAAAAA=",
+  "info": {
+    "decimals": 6,
+    "extensions": [
+      {
+        "extension": "metadataPointer",
+        "state": {
+          "authority": null,
+          "metadataAddress": "CcSRXUReR3VVG92C4rE8FqsLomzwmH6Dn1WhTGebpump"
+        }
+      },
+      {
+        "extension": "tokenMetadata",
+        "state": {
+          "additionalMetadata": [],
+          "mint": "CcSRXUReR3VVG92C4rE8FqsLomzwmH6Dn1WhTGebpump",
+          "name": "FĀFĀ",
+          "symbol": "发发",
+          "updateAuthority": null,
+          "uri": "https://ipfs.io/ipfs/bafkreigufmv2dn4hkp34gdd7ycgen6aahjkp5q2lq4vpzcoulennul6ab4"
+        }
+      }
+    ],
+    "freezeAuthority": null,
+    "isInitialized": true,
+    "mintAuthority": null,
+    "supply": "975157134650382"
+  }
+}

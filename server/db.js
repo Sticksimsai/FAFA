@@ -1,6 +1,9 @@
 import pg from 'pg';
 export function database(url){const pool=new pg.Pool({connectionString:url,max:10,connectionTimeoutMillis:5000});return pool}
 export async function migrate(db){await db.query(`
+CREATE TABLE IF NOT EXISTS red_envelope_snapshots (vault text NOT NULL,sequence numeric(20,0) NOT NULL,mint text NOT NULL,root text NOT NULL,snapshot_slot bigint NOT NULL,holders jsonb NOT NULL,begin_signature text,payout_signature text,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(vault,sequence));
+CREATE TABLE IF NOT EXISTS red_envelope_actions (id uuid PRIMARY KEY,vault text NOT NULL,sequence numeric(20,0) NOT NULL,kind text NOT NULL,signature text NOT NULL UNIQUE,last_valid_height bigint NOT NULL,status text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS red_envelope_actions_pending ON red_envelope_actions(vault,status);
 CREATE TABLE IF NOT EXISTS auth_challenges (id uuid PRIMARY KEY,wallet text NOT NULL,message text NOT NULL,expires_at timestamptz NOT NULL);
 CREATE TABLE IF NOT EXISTS sessions (token_hash text PRIMARY KEY,wallet text NOT NULL,expires_at timestamptz NOT NULL);
 CREATE TABLE IF NOT EXISTS drafts (wallet text PRIMARY KEY,data jsonb NOT NULL,updated_at timestamptz NOT NULL DEFAULT now());

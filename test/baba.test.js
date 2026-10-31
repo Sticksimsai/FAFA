@@ -41,3 +41,11 @@ test('official graduation transaction fits one packet and only NFT signers are s
  const tx=new VersionedTransaction(new TransactionMessage({payerKey:payer,recentBlockhash:key().toBase58(),instructions:[...out.transaction.instructions,ComputeBudgetProgram.setComputeUnitPrice({microLamports:10000})]}).compileToV0Message());
  assert.ok(tx.serialize().length<=1232);assert.equal(tx.message.header.numRequiredSignatures,3);tx.sign([out.firstPositionNftKeypair,out.secondPositionNftKeypair]);assert.ok(tx.signatures[0].every(b=>b===0));assert.ok(tx.signatures.slice(1).every(s=>s.some(b=>b!==0)));
 });
+
+test('FAFA quote builds against the exact mint without a deposit and rejects unsafe authorities',async()=>{
+ const a=JSON.parse(readFileSync(new URL('./fixtures/fafa-quote-mint.json',import.meta.url)));let unsafe=false;
+ const connection={getParsedAccountInfo:async()=>({value:{owner:new PublicKey(a.owner),data:{parsed:{info:{...a.info,...(unsafe?{freezeAuthority:Keypair.generate().publicKey.toBase58()}:{})}}}}}),getAccountInfo:async()=>({owner:new PublicKey(a.owner),data:Buffer.from(a.data,'base64')}),getEpochInfo:async()=>({epoch:1000}),getMultipleAccountsInfo:async()=>[null,null]};
+ const service=babaService({connection,assertMainnet:async()=>{},assemble:async(wallet,instructions)=>{const tx=new VersionedTransaction(new TransactionMessage({payerKey:new PublicKey(wallet),recentBlockhash:Keypair.generate().publicKey.toBase58(),instructions}).compileToV0Message());assert.equal(tx.message.header.numRequiredSignatures,3);assert.ok(tx.serialize().length<=1232);return {transaction:Buffer.from(tx.serialize()).toString('base64')}}},{quoteAsset:'FAFA'});
+ const built=await service.create({wallet:Keypair.generate().publicKey.toBase58(),mint:Keypair.generate().publicKey.toBase58(),curveConfig:Keypair.generate().publicKey.toBase58(),name:'发',symbol:'发',uri:'https://tryfafa.xyz/metadata/test'});
+ assert.equal(built.quote.quoteMint,'CcSRXUReR3VVG92C4rE8FqsLomzwmH6Dn1WhTGebpump');assert.equal(built.quote.quoteAsset,'FAFA');assert.equal(built.quote.initialQuoteDeposit,'0');assert.equal(built.quote.graduationTargetRaw,'10000000000000');unsafe=true;await assert.rejects(service.readiness,/authorities/);
+});

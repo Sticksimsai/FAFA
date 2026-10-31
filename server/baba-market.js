@@ -40,7 +40,7 @@ export function babaMarketService(pump,baba){
    const signatures=await pump.connection.getSignaturesForAddress(new PublicKey(account),{limit:25,...(before?{before}:{})},'confirmed');let missing=0,pos=0;const trades=[];
    await Promise.all(Array.from({length:3},async()=>{while(pos<signatures.length){const transactionOrder=pos,s=signatures[pos++];if(s.err)continue;try{const tx=await pump.connection.getTransaction(s.signature,{commitment:'confirmed',maxSupportedTransactionVersion:0});if(!tx){missing++;continue}trades.push(...decodeBabaTrades(tx,{pool:account,multiplier:info.quoteMultiplier,signature:s.signature,venue,transactionOrder}))}catch{missing++}}}));
    trades.sort((a,b)=>a.transactionOrder-b.transactionOrder||b.eventIndex-a.eventIndex);
-   const data={info,trades,supported:true,venue,account,priceUnit:'BABA',nextCursor:signatures.length===25?signatures.at(-1).signature:null,missingTransactions:missing,partial:missing>0,updatedAt:new Date().toISOString(),refreshSeconds:15};
+   const data={info,trades,supported:true,venue,account,priceUnit:info.quoteSymbol,nextCursor:signatures.length===25?signatures.at(-1).signature:null,missingTransactions:missing,partial:missing>0,updatedAt:new Date().toISOString(),refreshSeconds:15};
    cache.set(key,{at:Date.now(),data});while(cache.size>100)cache.delete(cache.keys().next().value);return data;
   })().finally(()=>inflight.delete(key));inflight.set(key,work);return work;
  }
