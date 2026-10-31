@@ -52,7 +52,7 @@ pub mod fafa_red_envelope {
         Ok(())
     }
     pub fn create_vault(ctx: Context<CreateVault>, cycle_seconds: i64) -> Result<()> {
-        require!([3600,21600,86400].contains(&cycle_seconds), ErrorCode::InvalidConfig);
+        require!([900,3600,7200,14400].contains(&cycle_seconds), ErrorCode::InvalidConfig);
         let quote=ctx.accounts.quote_mint.key();
         require!(quote==NATIVE||quote==BABA||quote==FAFA, ErrorCode::InvalidConfig);
         require!(ctx.accounts.quote_mint.decimals==if quote==NATIVE {9}else{6}, ErrorCode::InvalidConfig);

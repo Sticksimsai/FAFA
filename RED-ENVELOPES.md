@@ -6,7 +6,7 @@ FAFA mint: `CcSRXUReR3VVG92C4rE8FqsLomzwmH6Dn1WhTGebpump`. Default graduation ta
 
 ## Implemented reward design
 
-Each enrolled launch creates a per-mint vault. Creators choose 1h, 6h or 24h. Claimable creator fees are directed to the vault, excluding protocol fees and pool liquidity. The keeper collects fees, snapshots finalized balances, persists the full list, commits its root and the round amounts, then requests fresh ORAO randomness. One eligible wallet wins both committed quote and base-token fees. Each wallet has one entry; the creator, off-curve addresses and frozen accounts are excluded. Hold at least one whole token. Multiple wallets remain a Sybil limitation.
+Each enrolled launch creates a per-mint vault. Creators choose 15 minutes, 1 hour, 2 hours or 4 hours. Claimable creator fees are directed to the vault, excluding protocol fees and pool liquidity. The keeper collects fees, snapshots finalized balances, persists the full list, commits its root and the round amounts, then requests fresh ORAO randomness. One eligible wallet wins both committed quote and base-token fees. Each wallet has one entry; the creator, off-curve addresses and frozen accounts are excluded. Hold at least one whole token. Multiple wallets remain a Sybil limitation.
 
 Minimum quote rewards: 0.01 SOL, 0.01 BABA in raw-unit terms, or 100 FAFA. Underfunded rounds accumulate. The next cycle starts after settlement. Snapshot completeness depends on the configured keeper; random selection is verified onchain. Program upgrade authority remains a trust assumption. Vault donations and any rent returned during wrapped-SOL collection may also enter the pot.
 
