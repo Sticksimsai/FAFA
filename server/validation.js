@@ -4,7 +4,7 @@ import {PublicKey,VersionedTransaction} from '@solana/web3.js';
 import {createPublicKey,verify} from 'node:crypto';
 export const address=z.string().refine(v=>{try{return new PublicKey(v).toBase58()===v}catch{return false}},'Invalid Solana address');
 export const atomic=z.string().regex(/^[1-9][0-9]{0,19}$/).refine(v=>/^[1-9][0-9]{0,19}$/.test(v)&&BigInt(v)<=18446744073709551615n,'Amount exceeds u64');
-export const chineseTicker=z.string().refine(validChineseTicker,'Ticker must contain 1–3 Chinese Han characters and fit 10 UTF-8 bytes');
+export const chineseTicker=z.string().refine(validChineseTicker,'Ticker must contain 1–13 Chinese Han characters ');
 const social=(hosts)=>z.string().max(200).refine(v=>{if(v==='')return true;try{const u=new URL(v);return u.protocol==='https:'&&!u.username&&!u.password&&hosts.includes(u.hostname)&&u.pathname.length>1}catch{return false}},'Enter a valid HTTPS profile URL');
 export const draftSchema=z.object({name:z.string().trim().min(1).max(32).refine(v=>Buffer.byteLength(v)<=32,'Name must fit 32 UTF-8 bytes'),symbol:chineseTicker,description:z.string().max(280),image:z.string().max(200).optional(),twitter:social(['x.com','www.x.com','twitter.com','www.twitter.com']).optional(),telegram:social(['t.me','www.t.me']).optional()});
 export const launchSchema=draftSchema.extend({mint:address,image:z.url().max(200)}).strict();
