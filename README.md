@@ -133,3 +133,9 @@ New endpoints: `POST /api/translate/ticker` (authenticated and rate limited) and
 Standalone Swap navigation and its form have been removed. Trading lives at `/token/<mint>`; Jupiter remains an internal route for supported graduated tokens. The terminal includes candle intervals, confirmed trade history refreshed every 15 seconds, buy/sell previews, creator/date/raw metadata for site-created tokens, and metadata on mobile. External Pump mints without a local record show their address and onchain state; external metadata indexing is not implemented.
 
 Wallet login now separates provider connection from a user-clicked message-signing step. Pending requests, provider denial and backend origin errors are distinguished. A provider denial cannot be bypassed: open the extension and review its prompt. Tests do not replace browser extension acceptance testing.
+
+## Quote-asset selection
+
+Create supports explicit SOL selection and a BABAx stock-pair draft option. BABAx is not enabled for issuance or trading; choosing it updates the preview and can be saved, while both client and server block launch. A supported stock-quote launch/pool adapter, verified issuer mint and asset eligibility handling are still required. The app never substitutes SOL for a selected stock quote.
+
+Bundled artwork under /assets now falls through to static hosting when its path is not a database-upload UUID. A regression test checks the actual WebP response.
