@@ -1,3 +1,9 @@
+# Active implementation: server-run rewards
+
+The new launch mode is `custodial-v1`, with no custom-program deployment. See [deployment/CUSTODIAL-REWARDS.md](deployment/CUSTODIAL-REWARDS.md) for setup, custody disclosure, activation and recovery. The contract design below is retained for reference and is not used by custodial launches.
+
+---
+
 # Red envelope release status
 
 This commit ships the UI, rules, database tables, program source and separate keeper. It does not activate rewards. `RED_ENVELOPE_RELEASE_READY=false` rejects reward launches and mainnet keeper execution regardless of environment flags. Ordinary launches default to FAFA; SOL and BABA remain explicit options. Existing tokens and saved explicit quote selections are unchanged.

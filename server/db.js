@@ -1,6 +1,11 @@
 import pg from 'pg';
 export function database(url){const pool=new pg.Pool({connectionString:url,max:10,connectionTimeoutMillis:5000});return pool}
 export async function migrate(db){await db.query(`
+CREATE TABLE IF NOT EXISTS custodial_reward_wallets (id uuid PRIMARY KEY,wallet text NOT NULL UNIQUE,operator text NOT NULL,mint text UNIQUE,creator text,cycle_seconds integer,quote_mint text,assigned_at timestamptz,next_due bigint,sequence bigint NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS custodial_reward_worker (operator text PRIMARY KEY,executing boolean NOT NULL,balance_lamports numeric(20,0) NOT NULL,updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS custodial_reward_rounds (wallet text NOT NULL,sequence bigint NOT NULL,mint text NOT NULL,root text NOT NULL,snapshot_slot bigint NOT NULL,holders jsonb NOT NULL,winner text NOT NULL,winner_index integer NOT NULL,audit_nonce text NOT NULL,reward numeric(20,0) NOT NULL,base_reward numeric(20,0) NOT NULL,state text NOT NULL DEFAULT 'planned',payout_signature text,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(wallet,sequence));
+CREATE TABLE IF NOT EXISTS custodial_reward_actions (id uuid PRIMARY KEY,wallet text NOT NULL,sequence bigint NOT NULL,kind text NOT NULL,signature text NOT NULL UNIQUE,raw_transaction text NOT NULL,last_valid_height bigint NOT NULL,status text NOT NULL DEFAULT 'pending',created_at timestamptz NOT NULL DEFAULT now());
+CREATE UNIQUE INDEX IF NOT EXISTS custodial_reward_single_pending ON custodial_reward_actions(wallet) WHERE status='pending';
 CREATE TABLE IF NOT EXISTS red_envelope_snapshots (vault text NOT NULL,sequence numeric(20,0) NOT NULL,mint text NOT NULL,root text NOT NULL,snapshot_slot bigint NOT NULL,holders jsonb NOT NULL,begin_signature text,payout_signature text,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(vault,sequence));
 CREATE TABLE IF NOT EXISTS red_envelope_actions (id uuid PRIMARY KEY,vault text NOT NULL,sequence numeric(20,0) NOT NULL,kind text NOT NULL,signature text NOT NULL UNIQUE,last_valid_height bigint NOT NULL,status text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS red_envelope_actions_pending ON red_envelope_actions(vault,status);

@@ -31,3 +31,21 @@ export function decodeVault(account,programId){const r=reader(account,programId,
 export function decodeRound(account,programId){const r=reader(account,programId,'Round');return {vault:r.pubkey(),sequence:r.u64(),root:r.bytes(32).toString('hex'),count:r.u32(),snapshotSlot:r.u64(),reward:r.u64(),baseReward:r.u64(),randomness:r.pubkey(),seed:r.bytes(32).toString('hex'),requester:r.pubkey(),paid:r.bool(),winner:r.pubkey(),startedAt:Number(r.i64())}}
 export function decodeConfig(account,programId){return reader(account,programId,'Config').pubkey()}
 export async function readRewardVault(connection,{programId,mint,quoteMint}){const a=rewardAddresses(programId,mint,quoteMint),account=await connection.getAccountInfo(a.vault,'finalized');const v=decodeVault(account,programId);if(v.mint!==a.mint.toBase58()||v.quoteMint!==a.quoteMint.toBase58()||v.bump!==a.bump)throw new Error('Vault identity mismatch');return {...v,address:a.vault.toBase58(),lamports:account.lamports}}
+
+export function initializeRewardInstruction({programId,authority,snapshotAuthority}){
+ const program=key(programId),owner=key(authority),keeper=key(snapshotAuthority);
+ if(!PublicKey.isOnCurve(keeper.toBytes()))throw new Error('Snapshot authority must be a signing wallet');
+ const loader=new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111');
+ const programData=PublicKey.findProgramAddressSync([program.toBuffer()],loader)[0];
+ const config=PublicKey.findProgramAddressSync([Buffer.from('config')],program)[0];
+ return instruction({program},'initialize',[meta(owner,true,true),meta(program),meta(programData),meta(config,true),meta(SystemProgram.programId)],[keeper.toBuffer()]);
+}
+// Static addresses shared by all mints. Including both token programs keeps a
+// maximum-depth (20 siblings) payout within the 1232-byte packet for either quote.
+export function rewardLookupAddresses(programId){return [key(programId),TOKEN_PROGRAM_ID,TOKEN_2022_PROGRAM_ID,ASSOCIATED_TOKEN_PROGRAM_ID,SystemProgram.programId,NATIVE_MINT,key(BABA_QUOTE_MINT),key(FAFA_QUOTE_MINT),ORAO_ID,networkStateAccountAddress(),PublicKey.findProgramAddressSync([Buffer.from('config')],key(programId))[0]];}
+export function validateRewardLookup(lookup,programId){
+ if(!lookup||lookup.state.authority||lookup.state.deactivationSlot!==18446744073709551615n)throw new Error('Reward lookup table must be active and immutable');
+ const known=new Set(lookup.state.addresses.map(x=>x.toBase58()));
+ for(const address of rewardLookupAddresses(programId))if(!known.has(address.toBase58()))throw new Error('Reward lookup table is missing required address '+address.toBase58());
+ return lookup;
+}
