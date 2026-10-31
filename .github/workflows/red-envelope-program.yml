@@ -25,7 +25,14 @@ jobs:
           tar -xjf agave.tar.bz2
           echo "$PWD/solana-release/bin" >> "$GITHUB_PATH"
       - name: Build deployable SBF program (does not deploy)
-        run: cargo build-sbf --manifest-path programs/red-envelope/Cargo.toml --sbf-out-dir target/deploy
+        run: cargo build-sbf --tools-version v1.52 --manifest-path programs/red-envelope/Cargo.toml --sbf-out-dir target/deploy
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Execute compiled vault and ORAO lifecycle tests
+        run: node --test test/program/*.test.js
       - name: Record binary digest
         run: sha256sum target/deploy/fafa_red_envelope.so > target/deploy/SHA256SUMS
       - uses: actions/upload-artifact@v4
