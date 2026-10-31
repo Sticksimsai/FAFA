@@ -4,17 +4,19 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {Connection,PublicKey,Keypair,AddressLookupTableProgram,TransactionMessage,VersionedTransaction} from '@solana/web3.js';
 import {initializeRewardInstruction,rewardLookupAddresses,decodeConfig,validateRewardLookup} from '../server/red-envelope-chain.js';
+// Legacy RED_ENVELOPE_OPERATOR referred to deployment authority, not the keeper.
+process.env.RED_ENVELOPE_DEPLOY_AUTHORITY ||= process.env.RED_ENVELOPE_OPERATOR;
 const args=process.argv.slice(2),command=args.find(x=>!x.startsWith('--'))||'inspect',execute=args.includes('--execute');
 const option=name=>{const i=args.indexOf(name);return i<0?null:args[i+1]};
 if(!['inspect','initialize','create-lookup','extend-lookup','freeze-lookup'].includes(command))throw new Error('Unknown setup command');
-for(const key of ['SOLANA_RPC_URL','RED_ENVELOPE_PROGRAM_ID','RED_ENVELOPE_OPERATOR','RED_ENVELOPE_SNAPSHOT_AUTHORITY'])if(!process.env[key])throw new Error('Missing '+key);
-const connection=new Connection(process.env.SOLANA_RPC_URL,'finalized'),program=new PublicKey(process.env.RED_ENVELOPE_PROGRAM_ID),operator=new PublicKey(process.env.RED_ENVELOPE_OPERATOR),keeper=new PublicKey(process.env.RED_ENVELOPE_SNAPSHOT_AUTHORITY);
+for(const key of ['SOLANA_RPC_URL','RED_ENVELOPE_PROGRAM_ID','RED_ENVELOPE_DEPLOY_AUTHORITY','RED_ENVELOPE_SNAPSHOT_AUTHORITY'])if(!process.env[key])throw new Error('Missing '+key);
+const connection=new Connection(process.env.SOLANA_RPC_URL,'finalized'),program=new PublicKey(process.env.RED_ENVELOPE_PROGRAM_ID),operator=new PublicKey(process.env.RED_ENVELOPE_DEPLOY_AUTHORITY),keeper=new PublicKey(process.env.RED_ENVELOPE_SNAPSHOT_AUTHORITY);
 const genesis=await connection.getGenesisHash(),mainnet=genesis==='5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';
 if(!mainnet&&genesis!==process.env.RED_ENVELOPE_TEST_GENESIS_HASH)throw new Error('Unexpected network');
 const loader=new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111'),account=await connection.getAccountInfo(program,'finalized');
 if(!account?.executable||!account.owner.equals(loader)||account.data.length<36||account.data.readUInt32LE(0)!==2)throw new Error('Deploy the upgradeable program before setup');
 const programData=new PublicKey(account.data.subarray(4,36)),data=await connection.getAccountInfo(programData,'finalized');
-if(!data?.owner.equals(loader)||data.data.length<45||data.data.readUInt32LE(0)!==3||data.data[12]!==1||!new PublicKey(data.data.subarray(13,45)).equals(operator))throw new Error('Operator must be the deployed upgrade authority');
+if(!data?.owner.equals(loader)||data.data.length<45||data.data.readUInt32LE(0)!==3||data.data[12]!==1||!new PublicKey(data.data.subarray(13,45)).equals(operator))throw new Error('Deployment wallet must be the deployed upgrade authority');
 const hash=createHash('sha256').update(data.data.subarray(45)).digest('hex');
 console.log(JSON.stringify({network:mainnet?'mainnet-beta':'test',programId:program.toBase58(),programDataSha256:hash,operator:operator.toBase58(),keeper:keeper.toBase58()},null,2));
 if(execute&&process.env.RED_ENVELOPE_PROGRAM_SHA256!==hash)throw new Error('Set the reviewed deployed ProgramData hash before executing setup');
@@ -46,8 +48,8 @@ console.log(JSON.stringify({command,execute,lookupTable:lookupKey?.toBase58(),no
 const latest=await connection.getLatestBlockhash('confirmed'),tx=new VersionedTransaction(new TransactionMessage({payerKey:operator,recentBlockhash:latest.blockhash,instructions:[ix]}).compileToV0Message());
 const simulation=await connection.simulateTransaction(tx,{sigVerify:false,commitment:'confirmed'});if(simulation.value.err)throw new Error('Setup simulation failed: '+JSON.stringify(simulation.value.err));
 if(!execute){console.log('Simulation passed. No transaction sent.');process.exit(0)}
-const keyPath=option('--keypair');if(!keyPath)throw new Error('--keypair must explicitly name the operator-local keypair file');
-const signer=Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(keyPath,'utf8'))));if(!signer.publicKey.equals(operator))throw new Error('Keypair does not match operator');
+const keyPath=option('--keypair');if(!keyPath)throw new Error('--keypair must explicitly name the deployment-authority keypair file');
+const signer=Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(keyPath,'utf8'))));if(!signer.publicKey.equals(operator))throw new Error('Keypair does not match deployment authority');
 tx.sign([signer]);
 const {default:bs58}=await import('bs58');const signature=bs58.encode(tx.signatures[0]);console.log(JSON.stringify({signature,lastValidBlockHeight:latest.lastValidBlockHeight,lookupTable:lookupKey?.toBase58(),instruction:'Record these before broadcast; if confirmation times out, inspect this signature before retrying.'}));
 await connection.sendRawTransaction(tx.serialize(),{skipPreflight:false,maxRetries:3});
