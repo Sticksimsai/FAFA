@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+!.env.example
+public/live.js
+*.tar.gz
+*.zip
+public/token.js
+public/create.js
+public/ui.js

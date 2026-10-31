@@ -1,0 +1,1 @@
+let en=localStorage.getItem('fafa-lang')==='en';function render(){document.documentElement.lang=en?'en':'zh-CN';document.querySelectorAll('[data-cn]').forEach(e=>e.innerHTML=e.dataset[en?'en':'cn']);document.querySelector('#lang').textContent=en?'EN / 中':'中 / EN'}document.querySelector('#lang').onclick=()=>{en=!en;localStorage.setItem('fafa-lang',en?'en':'zh');render()};render();

@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: fafa-launchpad
+    runtime: node
+    plan: starter
+    numInstances: 1
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.22.1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fafa-db
+          property: connectionString
+      - key: APP_ORIGIN
+        sync: false
+      - key: SOLANA_RPC_URL
+        sync: false
+      - key: JUPITER_API_KEY
+        sync: false
+      - key: TRANSACTIONS_ENABLED
+        value: "false"
+      - key: SWAP_MINT_ALLOWLIST
+        value: So11111111111111111111111111111111111111112,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+databases:
+  - name: fafa-db
+    plan: basic-256mb
+    databaseName: fafa
+    user: fafa
+    ipAllowList: []

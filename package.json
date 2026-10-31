@@ -1,0 +1,33 @@
+{
+  "name": "fafa-launchpad",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0 <25"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --env-file-if-exists=.env server/index.js",
+    "build": "esbuild client/app.js --bundle --format=esm --platform=browser --outfile=public/live.js && esbuild client/token.js --bundle --format=esm --platform=browser --outfile=public/token.js && esbuild client/create.js --bundle --format=esm --platform=browser --outfile=public/create.js && esbuild client/ui.js --bundle --format=esm --platform=browser --outfile=public/ui.js",
+    "test": "node --experimental-test-module-mocks --test test/*.test.js",
+    "check": "node --check server/index.js && node --check server/pump.js && npm test && npm run build"
+  },
+  "dependencies": {
+    "@pump-fun/pump-sdk": "4.3.1",
+    "@solana/spl-token": "0.4.14",
+    "@solana/web3.js": "1.98.4",
+    "bn.js": "5.2.5",
+    "bs58": "6.0.0",
+    "buffer": "6.0.3",
+    "express": "5.1.0",
+    "express-rate-limit": "8.7.2",
+    "helmet": "8.1.0",
+    "pg": "8.16.3",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.11",
+    "pg-mem": "3.0.5"
+  }
+}
