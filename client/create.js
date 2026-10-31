@@ -23,3 +23,5 @@ async function pendingLaunches(){if(!session().wallet)return;try{const rows=awai
 window.addEventListener('fafa-state',()=>pendingLaunches());
 
 window.addEventListener('fafa-launch-reset',()=>{mintSigner=Keypair.generate();sessionStorage.removeItem('fafa-create-order');refresh();pendingLaunches()});
+
+setInterval(()=>{if(!document.hidden)loadLaunchReadiness()},30000);

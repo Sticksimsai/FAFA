@@ -17,15 +17,15 @@ services:
           name: fafa-db
           property: connectionString
       - key: APP_ORIGIN
-        sync: false
+        value: https://tryfafa.xyz
       - key: SOLANA_RPC_URL
         sync: false
       - key: JUPITER_API_KEY
         sync: false
       - key: TRANSACTIONS_ENABLED
-        value: "false"
+        sync: false
       - key: STOCK_LAUNCHES_ENABLED
-        value: "false"
+        sync: false
       - key: SWAP_MINT_ALLOWLIST
         value: So11111111111111111111111111111111111111112,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 databases:

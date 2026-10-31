@@ -1,0 +1,1 @@
+{"name":"@fafa/bigint-buffer","version":"1.0.0","private":true,"main":"index.cjs","description":"Bounds-checked JavaScript replacement for bigint-buffer; no native bindings","dependencies":{"buffer":"6.0.3"}}

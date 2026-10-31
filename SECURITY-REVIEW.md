@@ -4,18 +4,20 @@ This build is not security audited and is not cleared for an unrestricted mainne
 
 ## Verification completed
 
-- Twenty-one automated tests pass: signature/message binding, wrong-key rejection, transaction tampering and missing signatures, exact integer/UTF-8 limits, unsafe image rejection, official SDK creation signers, domain/auth/replay checks, persistent draft/watchlist operations with a PostgreSQL emulator, empty truthful catalogue, dedicated token routing, event authenticity/deduplication, PumpSwap pool matching, OHLC aggregation without invented gaps, and bounded/coalesced RPC fetching, Chinese-only tickers, safe social links, translation failure/length handling, and canonical website binding through launch confirmation.
+- Thirty-six automated tests pass: signature/message binding, wrong-key rejection, transaction tampering and missing signatures, exact integer/UTF-8 limits, unsafe image rejection, official SDK creation signers, domain/auth/replay checks, persistent draft/watchlist operations with a PostgreSQL emulator, empty truthful catalogue, dedicated token routing, event authenticity/deduplication, PumpSwap pool matching, OHLC aggregation without invented gaps, and bounded/coalesced RPC fetching, Chinese-only tickers, safe social links, translation failure/length handling, and canonical website binding through launch confirmation.
 - Server syntax and browser bundle build pass.
 - Read-only public-mainnet RPC check verified the full genesis hash and loaded the Pump global account using official SDK 4.3.1.
 - No mainnet transaction was signed/submitted. No funded wallet/private key was used.
 
 ## Dependency findings
 
-`npm audit --omit=dev` after updating direct fixable dependencies reports **14 affected packages: 7 high, 7 moderate, 0 critical**. These package counts include propagated dependency findings, not 14 distinct vulnerabilities.
+`npm audit --omit=dev` reports **2 affected packages: 0 high, 2 moderate, 0 critical**. The remaining reports are the `stream-json` parser and its parent `jayson`. These counts include propagated findings. The report is in `security/npm-audit.json`.
 
-Underlying advisory packages are `bigint-buffer`, `toml`, `stream-json`, and `uuid`, inherited through Pump/Anchor/Solana dependencies. The report is included at `security/npm-audit.json` with advisory URLs and dependency paths. Do not use an automatic major downgrade of Pump SDK as an audit fix: it can remove current protocol support. No untested cross-major override was applied.
+The vulnerable native `bigint-buffer` converter has been replaced through an npm override with a local, bounds-checked JavaScript adapter (`vendor/bigint-buffer`). It implements the four conversion functions used by token layouts, contains no native bindings or install script, and rejects values that do not fit the requested width. Tests cover endian round trips, full-width u64 layouts, invalid sizes, SDK transaction construction and clean installation. This is an application-owned replacement, not a patched upstream release or independent security audit.
 
-Application exposure analysis is incomplete. This app does not accept TOML and uses Node's crypto.randomUUID for its own IDs, but these facts do not establish that dependency findings are unreachable throughout the SDK. Deployment/build environments can load native bigint bindings unlike the current environment. Review patched upstream versions or independently validated replacements before public launch.
+Overrides pin `toml` to 5.0.1 and Jayson's `uuid` to 11.1.1. A clean `npm ci`, the full test suite and browser build pass with these changes. No Pump/Solana downgrade was applied.
+
+`stream-json` 3.x uses an incompatible ESM/path API; it cannot safely replace Jayson's 1.x dependency with a version-only override. The application uses Web3's HTTP JSON-RPC client and does not expose Jayson's streaming server. This narrows the observed exposure but is not a proof that every SDK path is unaffected. Keep the remaining advisories visible pending an upstream-compatible fix.
 
 ## Required acceptance checks
 
@@ -26,6 +28,8 @@ Application exposure analysis is incomplete. This app does not accept TOML and u
 - Domain-bound login, HTTPS/secure cookies, session expiry/logout and multi-user isolation on real PostgreSQL.
 - API abuse protection and provider quotas; the included rate limiter is per process, designed for the single instance in the Blueprint.
 - Browser visual/layout and integration QA. The managed browser preview infrastructure was unavailable during development.
-- Stock token asset/issuer/eligibility approval remains entirely outstanding; stock trading is disabled.
+- BABAx issuer mint and Raydium approval/config accounts have been checked read-only. Funded two-stage launch, swaps, LP receipt and issuer eligibility remain acceptance tasks. The operator controls the separate stock transaction switch.
 
 Mainnet transaction preparation/submission is disabled by default. No server-held user signing key is required or supported.
+
+The production domain is https://tryfafa.xyz. Wallet challenges remain origin-bound; do not bypass the check to fix a deployment mismatch. Background order reconciliation now handles closed browsers and guards against late mint confirmation downgrading a completed pool launch.

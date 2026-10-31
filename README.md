@@ -1,6 +1,6 @@
 # 发发 FāFā — Pump.fun / Solana integration candidate
 
-**Status: implementation candidate, not a completed or audited mainnet launch.** The code includes real SDK transaction builders, wallet signing and backend persistence. No real transaction has been signed or submitted during development. The shipped configuration disables transaction preparation/submission. The existing ChatGPT-hosted demo is separate from this Render application.
+**Status: implementation candidate, not a completed or audited mainnet launch.** The code includes real SDK transaction builders, wallet signing and backend persistence. No real transaction has been signed or submitted during development. The runtime disables transaction preparation/submission when the operator flags are unset. The existing ChatGPT-hosted demo is separate from this Render application.
 
 ## Implemented
 
@@ -152,3 +152,9 @@ Bundled artwork under /assets now falls through to static hosting when its path 
 - Transactions are simulated, bound to the authenticated wallet and stored message, and signed by the creator. Stock routes remain off until `TRANSACTIONS_ENABLED=true` and `STOCK_LAUNCHES_ENABLED=true`.
 
 Before public activation, deploy to a restricted environment, inspect readiness, connect a funded owner-controlled wallet and complete both signatures. Check fee debit, metadata/authority locks, LP receipt, final token link, buy/sell and recovery after an interrupted pool step. Automated tests and read-only mainnet checks do not replace this funded acceptance run. Existing issuer eligibility restrictions still apply.
+
+## Production domain and status
+
+The production URL is https://tryfafa.xyz. Set `APP_ORIGIN=https://tryfafa.xyz` in the existing Render service environment and redeploy; editing a repository Blueprint does not change settings on a manually created service. The default Render URL is not the sign-in domain. Existing metadata URLs remain unchanged. Transaction flags are operator-managed (`sync: false`) so Blueprint updates do not reset them.
+
+The frontend refreshes configuration every 30 seconds and when a tab becomes visible. Wallet connection rechecks the canonical origin before opening a prompt. Background order reconciliation checks submitted transactions every 10 seconds and publishes confirmed launches even after the browser closes; no server signing keys are used.

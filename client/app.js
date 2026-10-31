@@ -1,3 +1,4 @@
+import {canonicalSite} from './site-config.js';
 import {walletError} from './wallet-errors.js';
 import {icon} from './icons.js';
 import {Keypair,VersionedTransaction} from '@solana/web3.js';
@@ -17,9 +18,10 @@ function walletProgress(step){const el=$('#wallet-progress');if(el){el.hidden=fa
 async function login(p,id){
  if(walletBusy)return;
  walletBusy=true;const epoch=++walletEpoch;
- const fail=(e,stage)=>{clearWallet();modal(`<div class="dialog-symbol">${icon('wallet')}</div><h2>${t('钱包连接未完成','Wallet connection incomplete')}</h2><p class="error" role="alert">${esc(walletError(e,stage,en))}</p><button class="primary" id="wallet-retry">${t('重新连接','Try again')}</button>`);$('#wallet-retry').onclick=wallets};
+ const fail=(e,stage)=>{clearWallet();modal(`<div class="dialog-symbol">${icon('wallet')}</div><h2>${t('钱包连接未完成','Wallet connection incomplete')}</h2><p class="error" role="alert">${esc(walletError(e,stage,en))}</p>${e.siteOrigin?`<p>${t('当前地址：','Current address: ')}${esc(location.origin)}</p><a class="primary" href="${esc(e.siteOrigin)}">${t('打开正确的网站','Open the configured site')}</a>`:''}<button class="primary" id="wallet-retry">${t('重新连接','Try again')}</button>`);$('#wallet-retry').onclick=wallets};
  const finish=async verified=>{if(walletEpoch!==epoch||p.publicKey?.toBase58()!==verified.wallet)throw new Error('Wallet account changed');wallet=verified.wallet;provider=p;localStorage.setItem('fafa-wallet',id);localStorage.removeItem('fafa-disconnected');$('#modal').close();paint();refresh().catch(e=>toast(e.message))};
  try{
+ await refreshConfig();const site=canonicalSite(config,location.origin);if(!site.matches)throw Object.assign(new Error('Origin mismatch'),{siteOrigin:site.origin});
  walletProgress(t('01 / 请在钱包中批准连接','01 / Approve connection in your wallet'));
  if(!p.isConnected)await p.connect();
  const requested=p.publicKey?.toBase58();if(!requested)throw new Error('Wallet did not provide an address');
@@ -50,6 +52,8 @@ if($('#wallet'))$('#wallet').onclick=wallets;if($('#lang'))$('#lang').onclick=()
 if($('#cards')){
 $('#search').oninput=paint;$('#search').onkeydown=e=>{if(e.key==='Enter'&&/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(e.target.value.trim()))detail(e.target.value.trim())};$('#sort').onchange=paint;$('#clear').onclick=()=>{$('#search').value='';paint()};$('#stocklink').onclick=()=>{view='stocks';paint();$('.explore').scrollIntoView({behavior:'smooth'})};$('#how').onclick=()=>location.href='/docs.html';const menu=document.createElement('div');menu.className='mobile-menu';menu.innerHTML=`<button data-view="all" data-cn="发射台" data-en="Launchpad"></button><button data-view="stocks" data-cn="股票" data-en="Stocks"></button><button data-view="watch" data-cn="自选" data-en="Watchlist"></button>`;$('header').after(menu);
 }
-paint();const ready=(async()=>{try{config=await api('/config');await restoreWallet();if($('#cards'))await refresh();else paint()}catch(e){if($('#backend-status'))$('#backend-status').textContent=t('后端不可用，请检查服务配置。','Backend unavailable. Check the service configuration.');toast(e.message)}})();
+let configPending=null;async function refreshConfig(){if(configPending)return configPending;configPending=(async()=>{try{const next=await api('/config');if(JSON.stringify(next)!==JSON.stringify(config)){config=next;paint()}return config}finally{configPending=null}})();return configPending}
+setInterval(()=>{if(!document.hidden)refreshConfig().catch(()=>{})},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshConfig().catch(()=>{})});
+paint();const ready=(async()=>{try{await refreshConfig();await restoreWallet();if($('#cards'))await refresh();else paint()}catch(e){if($('#backend-status'))$('#backend-status').textContent=t('后端不可用，请检查服务配置。','Backend unavailable. Check the service configuration.');toast(e.message)}})();
 function session(){return {wallet,provider,config,en}}
 export {api,review,wallets,units,human,session,ready,t,esc,toast,reviewLaunch,track};

@@ -1,0 +1,8 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {canonicalSite} from '../client/site-config.js';
+import {createRequire} from 'node:module';
+import {u64} from '@solana/buffer-layout-utils';
+const require=createRequire(import.meta.url),integers=require('../vendor/bigint-buffer/index.cjs');
+test('wallet preflight distinguishes custom domain from old Render origin and rejects invalid schemes',()=>{assert.equal(canonicalSite({siteOrigin:'https://tryfafa.xyz'},'https://tryfafa.xyz').matches,true);assert.equal(canonicalSite({siteOrigin:'https://tryfafa.xyz'},'https://fafa-mf1h.onrender.com').matches,false);assert.throws(()=>canonicalSite({siteOrigin:'javascript:alert(1)'},'https://tryfafa.xyz'));assert.throws(()=>canonicalSite(null,'https://tryfafa.xyz'));});
+test('replacement integer adapter round-trips full-width unsigned token values in both endiannesses',()=>{for(const width of [1,8,16,32]){const max=(1n<<BigInt(width*8))-1n;for(const n of [0n,1n,127n,max]){assert.equal(integers.toBigIntLE(integers.toBufferLE(n,width)),n);assert.equal(integers.toBigIntBE(integers.toBufferBE(n,width)),n);}}const layout=u64(),buffer=Buffer.alloc(8);layout.encode(18446744073709551615n,buffer,0);assert.equal(layout.decode(buffer,0),18446744073709551615n);assert.equal(integers.toBigIntLE(Buffer.alloc(0)),0n);});
+test('integer adapter refuses native-overflow inputs, over-width values and invalid widths',()=>{assert.throws(()=>integers.toBigIntLE(Buffer.alloc(4097)),RangeError);assert.throws(()=>integers.toBufferLE(-1n,8),TypeError);assert.throws(()=>integers.toBufferBE(256n,1),RangeError);assert.throws(()=>integers.toBufferLE(1n,Infinity),RangeError);assert.throws(()=>integers.toBufferBE(1n,-1),RangeError);});
