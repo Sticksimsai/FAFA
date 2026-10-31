@@ -7,17 +7,15 @@
  function text(c,str,x,y,size=12,color=muted,align='left'){c.fillStyle=color;c.font=`${size>=20?'700':'500'} ${size}px system-ui,"PingFang SC","Microsoft YaHei",sans-serif`;c.textAlign=align;c.fillText(str,x,y)}
  function line(c,x,y,X,Y,color,width=1){c.beginPath();c.strokeStyle=color;c.lineWidth=width;c.moveTo(x,y);c.lineTo(X,Y);c.stroke();c.lineWidth=1}
  function circle(c,x,y,r,color){c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fillStyle=color;c.fill()}
- function mascot(c,x,y,type,scale=1){c.save();c.translate(x,y);c.scale(scale,scale);
- if(type==='dog'){c.fillStyle=gold;c.beginPath();c.moveTo(-39,-22);c.lineTo(-34,-64);c.lineTo(-9,-38);c.lineTo(14,-38);c.lineTo(37,-64);c.lineTo(42,-18);c.closePath();c.fill();round(c,-43,-36,86,78,33,gold);round(c,-28,-7,56,42,20,'#fff0bc');round(c,-40,-24,34,17,5,'#111a14');round(c,6,-24,34,17,5,'#111a14');line(c,-6,-17,6,-17,'#111a14',5);circle(c,0,6,6,'#182318');line(c,0,11,0,22,'#182318',2);line(c,0,22,10,18,'#182318',2)}
- else if(type==='panda'){circle(c,-31,-32,19,'#99ad9a');circle(c,31,-32,19,'#99ad9a');round(c,-44,-38,88,82,36,'#edf3df');circle(c,-20,-5,16,'#17271e');circle(c,20,-5,16,'#17271e');circle(c,-18,-9,4,'#edf3df');circle(c,18,-9,4,'#edf3df');circle(c,0,15,6,'#17271e');line(c,-8,29,8,29,'#17271e',2)}
- else{c.strokeStyle=gold;c.lineWidth=18;c.beginPath();c.moveTo(-40,36);c.bezierCurveTo(15,72,55,8,7,8);c.bezierCurveTo(-42,7,-32,-35,15,-32);c.stroke();c.lineWidth=1;round(c,-4,-49,56,38,14,gold);line(c,3,-44,-9,-65,gold,7);line(c,22,-45,23,-66,gold,7);circle(c,30,-34,5,'#17231a');line(c,47,-22,69,-32,gold,2);line(c,45,-18,66,-8,gold,2)}c.restore()}
- function mint(c,t){const name={dog:'金狗',dragon:'龙王',panda:'熊猫'}[meme];
+ const atlas=new Image();atlas.src='/assets/meme-family.webp';atlas.onload=()=>redraw();
+ function mascot(c,x,y,type,scale=1){const coords={panda:[0,0],frog:[1,0],cat:[0,1],dog:[1,1]};if(!atlas.complete||!atlas.naturalWidth)return;const [col,row]=coords[type]||coords.dog,w=atlas.naturalWidth/2,h=atlas.naturalHeight/2;c.save();c.beginPath();c.arc(x,y,66*scale,0,Math.PI*2);c.clip();c.drawImage(atlas,col*w,row*h,w,h,x-66*scale,y-66*scale,132*scale,132*scale);c.restore()}
+ function mint(c,t){const name={dog:'机灵狗',frog:'青蛙',cat:'开心猫',panda:'熊猫头'}[meme];
  for(let i=0;i<16;i++){const a=i*2.4+t*.16,r=80+(i%4)*12;circle(c,175+Math.cos(a)*r,140+Math.sin(a)*r*.8,1.7,i%2?gold:lime)}
  c.save();c.translate(170,137+Math.sin(t*1.4)*5);c.rotate(Math.sin(t*.6)*.035);circle(c,0,0,86,'#233520');c.strokeStyle='#6f8a40';c.lineWidth=2;c.beginPath();c.arc(0,0,78,0,Math.PI*2);c.stroke();c.lineWidth=1;mascot(c,0,-5,meme,.95);text(c,name,0,64,18,lime,'center');c.restore();
  round(c,300,45,190,192,12,'#17241b','#3f563a');text(c,tr('灵感 → 中文代码','IDEA → CHINESE TICKER'),314,70,10);text(c,name,314,105,25,lime);text(c,tr('社区的梗，自己的币。','Your meme. Your community.'),314,131,11,'#d8e5cc');line(c,314,147,474,147,'#334d32');text(c,tr('名称已就位','Name ready'),314,169,12);text(c,'✓',470,169,14,lime,'right');text(c,tr('专属代币页面','Dedicated token page'),314,195,12);text(c,'✓',470,195,14,lime,'right');
  const p=(t*.25)%1;line(c,254,136,294,136,'#576c3a');circle(c,254+p*40,136,3,lime);text(c,tr('点击下方，切换你的中文梗','Choose a Chinese meme below'),260,268,11,muted,'center')}
  const values=Array.from({length:38},(_,i)=>95+Math.sin(i*.7)*17+Math.cos(i*.32)*23+i*.45);
- function chart(c,t){text(c,tr('金狗 / SOL · 示例','金狗 / SOL · EXAMPLE'),20,25,12,'#d7e7cd');text(c,tr('演示走势，不代表收益','Illustration, not returns'),500,25,10,muted,'right');
+ function chart(c,t){text(c,tr('机灵狗 / SOL · 示例','机灵狗 / SOL · EXAMPLE'),20,25,12,'#d7e7cd');text(c,tr('演示走势，不代表收益','Illustration, not returns'),500,25,10,muted,'right');
  for(let i=0;i<5;i++)line(c,20,48+i*35,368,48+i*35,'#263629');
  const count=reduced()?30:Math.min(38,8+Math.floor((t%18)*2));const X=i=>28+i*8.7,Y=v=>211-v;
  if(mode==='line'){c.beginPath();c.strokeStyle=lime;c.lineWidth=2;for(let i=0;i<count;i++){if(i===0)c.moveTo(X(i),Y(values[i]));else c.lineTo(X(i),Y(values[i]))}c.stroke();c.lineWidth=1}
@@ -33,6 +31,7 @@
  function sync(){cancelAnimationFrame(raf);raf=0;redraw();if(!reduced()&&!document.hidden&&scenes.some(s=>s.visible))raf=requestAnimationFrame(loop)}
 
  const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{scenes.find(s=>s.el===e.target).visible=e.isIntersecting});sync()},{threshold:.15});scenes.forEach(s=>{observer.observe(s.el);new ResizeObserver(()=>draw(s,reduced()?4:(performance.now()-start)/1000)).observe(s.canvas)});
+ document.querySelectorAll('[data-character]').forEach(b=>b.onclick=()=>{document.querySelector(`[data-meme="${b.dataset.character}"]`).click();document.querySelector('[data-slide="0"]').click();document.querySelector('.discover-deck').scrollIntoView({behavior:reduced()?'instant':'smooth',block:'start'})});
  document.querySelectorAll('[data-meme]').forEach(b=>b.onclick=()=>{meme=b.dataset.meme;document.querySelectorAll('[data-meme]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));redraw()});
  document.querySelectorAll('[data-chart]').forEach(b=>b.onclick=()=>{mode=b.dataset.chart;document.querySelectorAll('[data-chart]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));redraw()});document.querySelector('[data-replay]').onclick=()=>{start=performance.now();redraw()};
  document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{step=Number(b.dataset.step);document.querySelectorAll('[data-step]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));redraw()});
