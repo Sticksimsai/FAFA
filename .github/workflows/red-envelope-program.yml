@@ -1,9 +1,9 @@
 name: Red envelope program checks
 on:
   push:
-    paths: ['programs/red-envelope/**', 'test/program/**', '.github/workflows/red-envelope-program.yml']
+    paths: ['programs/red-envelope/**', 'test/program/**', 'test/fixtures/**', 'scripts/fetch-*-fixture*.js', 'server/red-envelope-fees.js', '.github/workflows/red-envelope-program.yml']
   pull_request:
-    paths: ['programs/red-envelope/**', 'test/program/**', '.github/workflows/red-envelope-program.yml']
+    paths: ['programs/red-envelope/**', 'test/program/**', 'test/fixtures/**', 'scripts/fetch-*-fixture*.js', 'server/red-envelope-fees.js', '.github/workflows/red-envelope-program.yml']
 permissions:
   contents: read
 jobs:
@@ -43,6 +43,8 @@ jobs:
       - run: npm ci
       - name: Fetch and verify pinned ORAO test program
         run: node scripts/fetch-orao-fixture.js
+      - name: Fetch and verify pinned fee collection programs
+        run: node scripts/fetch-fee-fixtures.js
       - name: Execute compiled vault and ORAO lifecycle tests
         run: node --test test/program/*.test.js
       - name: Record binary digest
