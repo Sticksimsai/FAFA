@@ -2,7 +2,7 @@
 .guide-layout{display:grid;grid-template-columns:260px minmax(0,780px);gap:72px;max-width:1240px;margin:0 auto;padding:52px 28px 40px}
 .guide-sidebar{position:sticky;top:104px;align-self:start;max-height:calc(100vh - 128px);overflow-y:auto;padding-right:4px}
 .guide-sidebar>label{display:block;margin:24px 0 8px;font-size:12px;font-weight:600;color:var(--muted)}
-.guide-sidebar input{width:100%;height:42px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:var(--glaze);font-size:14px;color:var(--ink);transition:border-color .2s,box-shadow .2s}
+.guide-sidebar input{width:100%;height:42px;padding:0 16px;border:1px solid var(--line);border-radius:8px;background:var(--glaze);font-size:14px;color:var(--ink);transition:border-color .2s,box-shadow .2s}
 .guide-sidebar input:focus{border-color:var(--cobalt);box-shadow:0 0 0 4px #f2c24a1f}
 .guide-sidebar nav{display:flex;flex-direction:column;gap:2px;height:auto;margin:20px 0}
 .guide-sidebar nav a{position:relative;padding:10px 14px;border-radius:12px;font-size:14px;font-weight:500;color:var(--ink-2);transition:background .2s,color .2s,padding .3s var(--ease-out)}
@@ -10,16 +10,16 @@
 .guide-sidebar nav a[aria-current=true]{padding-left:24px;background:var(--cobalt);color:var(--on-accent);font-weight:700}
 .guide-sidebar nav a[aria-current=true]:before{content:'';position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:var(--on-accent)}
 .reading-track{height:4px;margin-top:22px;border-radius:4px;background:var(--line);overflow:hidden}
-.reading-track span{display:block;width:0;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cobalt),var(--seal))}
+.reading-track span{display:block;width:0;height:100%;background:var(--cobalt)}
 #reading-label{display:block;margin-top:8px;font-size:12px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
 .guide-launch{display:block;margin-top:26px;padding:14px 16px;border-radius:14px;background:var(--cobalt-wash);font-size:14px;font-weight:700;line-height:1.6;color:var(--cobalt);transition:background .2s,color .2s}
 .guide-launch:hover{background:var(--cobalt);color:var(--on-accent)}
 
 .guide-intro{padding:6px 0 44px}
-.guide-intro h1{margin:20px 0;font-size:clamp(38px,4.8vw,66px);line-height:1.1;text-wrap:balance}
+.guide-intro h1{margin:12px 0;font-size:clamp(28px,3.2vw,42px);line-height:1.2;text-wrap:balance}
 .guide-intro p{max-width:34em;margin:0;font-size:17px;line-height:1.75;color:var(--ink-2)}
 .guide-badges{display:flex;gap:8px;margin-top:24px}
-.guide-badges span{padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:var(--glaze);font-size:13px;font-weight:600;color:var(--ink-2)}
+.guide-badges span{padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:var(--glaze);font-size:13px;font-weight:600;color:var(--ink-2)}
 .guide-section{scroll-margin-top:100px;padding:36px 0;border-top:1px solid var(--line)}
 .guide-section h2{margin:0 0 18px;font-size:28px}
 .guide-section>svg.ui-icon{display:none}
@@ -38,12 +38,12 @@
 /* ── Rules page ─────────────────────────────────────── */
 main.rules{max-width:820px;margin:0 auto;padding:44px 24px 80px}
 main.rules>a{display:inline-block;margin-bottom:22px;font-size:14px;font-weight:600;color:var(--cobalt)}
-main.rules h1{font-size:clamp(36px,5vw,56px);line-height:1.12}
+main.rules h1{font-size:clamp(28px,3.4vw,40px);line-height:1.2}
 main.rules h2{margin-top:36px;font-size:24px}
 main.rules p,main.rules li{font-size:16px;line-height:1.85;color:var(--ink-2);overflow-wrap:anywhere}
 main.rules p strong{color:var(--ink)}
 main.rules .status{display:block;margin:20px 0 6px;padding:14px 18px;border-radius:14px;background:var(--gilt-wash);border:1px solid #f2c24a59;color:#f4d98f;font-size:14px;line-height:1.7}
-main.rules hr{height:10px;margin:56px 0;border:0;background:var(--fret) repeat-x 50% 0/14px 10px;opacity:.5}
+main.rules hr{margin:48px 0;border:0;border-top:1px solid var(--line)}
 
 @media(max-width:900px){
   .guide-layout{grid-template-columns:210px minmax(0,1fr);gap:34px}

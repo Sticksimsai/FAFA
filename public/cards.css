@@ -1,21 +1,13 @@
-/* Token cards — glazed porcelain tiles.
-   Each card carries a generative cobalt ornament seeded by its mint, a brush-drawn
-   sparkline, and a glaze highlight that follows the pointer. */
-@property --rim{syntax:'<angle>';inherits:false;initial-value:0deg}
-
-#cards{perspective:1400px}
+/* Token cards. The chart draws in and the market cap rolls up when data lands;
+   a gold edge follows the pointer. */
 .market-card{
-  --rx:0deg;--ry:0deg;--mx:50%;--my:0%;
+  --mx:50%;--my:0%;
   display:flex;flex-direction:column;min-width:0;
   padding:20px 20px 12px;
   overflow:hidden;isolation:isolate;
-  transform:rotateX(var(--rx)) rotateY(var(--ry));
-  transform-style:preserve-3d;
-  transition:transform .6s var(--ease-out),box-shadow .35s,border-color .35s;
-  will-change:transform;
+  transition:border-color .2s,background .2s;
 }
-.market-card.is-tilting{transition:transform .12s linear,box-shadow .35s,border-color .35s;box-shadow:var(--shadow-2);border-color:#f2c24a8c}
-.market-card:focus-within{box-shadow:var(--shadow-2);border-color:#f2c24a8c}
+.market-card.is-tilting,.market-card:focus-within{border-color:#f2c24a66;background:#161c3c}
 
 /* rim light: a cobalt edge that tracks the pointer */
 .market-card:before{
@@ -26,69 +18,33 @@
   opacity:0;transition:opacity .35s;pointer-events:none;
 }
 .market-card.is-tilting:before{opacity:1}
-.mc-glaze{
-  position:absolute;inset:0;z-index:-2;pointer-events:none;
-  background:
-    radial-gradient(380px circle at var(--mx) var(--my),#f2c24a1c,transparent 60%),
-    linear-gradient(180deg,#1a2147 0,var(--glaze) 100%);
-  opacity:0;transition:opacity .35s;
-}
-.market-card.is-tilting .mc-glaze{opacity:1}
-
-/* ornament */
-.mc-motif{
-  position:absolute;z-index:-1;top:-34px;right:-34px;width:210px;height:210px;
-  color:var(--cobalt);opacity:.26;pointer-events:none;
-  -webkit-mask:radial-gradient(circle at 72% 26%,#000 18%,transparent 68%);
-  mask:radial-gradient(circle at 72% 26%,#000 18%,transparent 68%);
-  transition:opacity .5s,transform 1.2s var(--ease-out);
-}
-.mc-motif svg{display:block;width:100%;height:100%;overflow:visible}
-.mc-motif path{stroke-dasharray:1;stroke-dashoffset:0}
-.market-card.is-tilting .mc-motif,.market-card:focus-within .mc-motif{opacity:.42;transform:translate(-6px,6px) rotate(-3deg)}
-.market-card.is-tilting .mc-motif path{animation:paint 1.5s var(--ease-out) both}
-.market-card.is-tilting .motif-petals{animation:spin 26s linear infinite;transform-origin:71% 29%}
-.market-card.is-loading .mc-motif{animation:motif-breathe 2.4s ease-in-out infinite}
-@keyframes paint{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
-@keyframes motif-breathe{50%{opacity:.34;transform:translate(-5px,5px)}}
-
 /* head */
 .market-card-head{display:flex;align-items:center;gap:12px}
 .market-identity{display:flex;align-items:center;gap:14px;min-width:0;flex:1;color:var(--ink)}
 .market-identity>span:last-child{min-width:0}
-.market-identity strong{display:block;font-family:var(--serif);font-weight:900;font-size:19px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-identity strong{display:block;font-family:var(--sans);font-weight:700;font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .market-identity small{display:block;margin-top:3px;font-size:13px;color:var(--muted)}
 .market-avatar{
-  position:relative;flex:none;
-  display:grid;place-items:center;
-  width:52px;height:52px;border-radius:50%;
-  background:var(--cobalt-wash);color:var(--cobalt);
-  font-family:"Noto Serif SC","Noto Serif CJK SC",serif;font-weight:900;font-size:24px;
-  box-shadow:0 0 0 3px var(--glaze),0 0 0 4.5px var(--cobalt);
-  margin:4px;
+  flex:none;display:grid;place-items:center;overflow:hidden;
+  width:46px;height:46px;border-radius:8px;
+  background:var(--glaze-2);border:1px solid var(--line);color:var(--cobalt);
+  font-weight:900;font-size:22px;
 }
-.market-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-/* dotted plate rim that turns while the card is held */
-.market-avatar:after{
-  content:'';position:absolute;inset:-9px;border-radius:50%;
-  border:1.5px dotted var(--cobalt);opacity:0;transform:scale(.86);
-  transition:opacity .4s,transform .6s var(--ease-out);
-}
-.market-card.is-tilting .market-avatar:after,.market-identity:focus-visible .market-avatar:after{opacity:.55;transform:scale(1);animation:spin 14s linear infinite}
+.market-avatar img{width:100%;height:100%;object-fit:cover}
 .market-card .save{
-  flex:none;width:38px;height:38px;border-radius:50%;
-  color:var(--muted);font-size:21px;line-height:1;
-  transition:color .2s,background .2s,transform .3s var(--ease-out);
+  flex:none;width:34px;height:34px;border-radius:8px;
+  color:var(--muted);font-size:19px;line-height:1;
+  transition:color .15s,background .15s;
 }
-.market-card .save:hover{background:var(--cobalt-wash);color:var(--cobalt);transform:rotate(-14deg) scale(1.12)}
-.market-card .save.saved{color:var(--seal)}
+.market-card .save:hover{background:var(--cobalt-wash);color:var(--cobalt)}
+.market-card .save.saved{color:var(--cobalt)}
 .market-card .save.stamp{animation:stamp .55s var(--ease-out)}
 
 .market-pair{display:flex;align-items:center;gap:8px;min-height:24px;margin-top:12px;font-size:12px;color:var(--muted);min-width:0}
 .market-pair b{font-weight:600;color:var(--ink-2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .market-pair>span:not(.pair-dot){margin-left:auto}
-.pair-dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--jade);animation:ripple 2.4s ease-out infinite}
-.market-pair em{font-style:normal;font-weight:800;font-size:11px;letter-spacing:.06em;color:#fff;background:var(--seal);padding:3px 7px;border-radius:5px 6px 4px 7px;transform:rotate(-3deg)}
+.pair-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--jade)}
+.market-pair em{font-style:normal;font-weight:800;font-size:11px;letter-spacing:.06em;color:var(--on-accent);background:var(--cobalt);padding:2px 6px;border-radius:4px}
 
 /* preview */
 .market-card button.market-preview{
@@ -100,8 +56,8 @@
 .market-preview:hover{background:#f2c24a08}
 .preview-values{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0 20px}
 .preview-values small{display:block;font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--muted)}
-.preview-values strong{display:block;margin-top:2px;font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.15;letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums lining-nums}
-.preview-change{margin-top:17px;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--glaze-2);white-space:nowrap}
+.preview-values strong{display:block;margin-top:2px;font-family:var(--sans);font-weight:700;font-size:26px;line-height:1.2;letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums lining-nums}
+.preview-change{margin-top:17px;padding:4px 9px;border-radius:8px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--glaze-2);white-space:nowrap}
 .preview-change.positive{color:var(--jade);background:var(--jade-wash)}
 .preview-change.negative,.negative{color:var(--seal)}
 .preview-change.negative{background:var(--seal-wash)}
@@ -113,8 +69,8 @@
 .mini-chart svg.positive{color:var(--jade)}
 .mini-chart svg.negative{color:var(--seal)}
 .spark-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 5;fill:none;vector-effect:non-scaling-stroke}
-.spark-line{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.spark-bleed{fill:none;stroke:currentColor;stroke-opacity:.14;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+.spark-line{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.spark-bleed{display:none;fill:none;stroke:currentColor;stroke-opacity:.14;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
 .spark-dot{
   position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;
   background:var(--cobalt);box-shadow:0 0 0 2.5px var(--glaze);
@@ -155,7 +111,7 @@
 .market-card-footer a:hover{background-size:100% 2px}
 .copy-ca{
   display:inline-flex;align-items:center;gap:7px;min-width:0;
-  padding:7px 11px;border:1px solid var(--line);border-radius:999px;
+  padding:7px 11px;border:1px solid var(--line);border-radius:8px;
   background:var(--glaze-2);color:var(--ink-2);font-size:12px;white-space:nowrap;
   transition:border-color .2s,color .2s,background .2s;
 }
@@ -166,22 +122,12 @@
 .copy-ca.copied [data-copy-mark]{display:inline-block;animation:stamp .4s var(--ease-out)}
 .market-card-status{min-height:16px;margin-top:8px;font-size:11px;color:var(--muted)}
 
-/* the house token wears a gilt rim */
-.market-card.is-featured{border-color:transparent;background:
-  linear-gradient(var(--glaze),var(--glaze)) padding-box,
-  conic-gradient(from var(--rim),#e9cf8f,var(--gilt) 18%,#fff3cf 30%,var(--gilt) 46%,#e9cf8f 62%,var(--gilt) 80%,#e9cf8f) border-box;
-  border-width:1.5px;animation:rim-turn 9s linear infinite}
-.market-card.is-featured .market-avatar{box-shadow:0 0 0 3px var(--glaze),0 0 0 4.5px var(--gilt)}
-.market-card.is-featured .mc-motif{color:var(--gilt);opacity:.34}
-@keyframes rim-turn{to{--rim:360deg}}
-
 /* first arrival of the grid */
-#cards.is-entering .market-card{animation:card-rise .8s var(--ease-out) both;animation-delay:calc(var(--i)*70ms)}
-#cards.is-entering .market-card.is-featured{animation:card-rise .8s var(--ease-out) both,rim-turn 9s linear infinite}
-@keyframes card-rise{from{opacity:0;transform:translateY(26px) rotateX(-8deg)}to{opacity:1;transform:none}}
+#cards.is-entering .market-card{animation:card-rise .4s ease-out both;animation-delay:calc(var(--i)*40ms)}
+@keyframes card-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ── Chart overlay ──────────────────────────────────── */
-.market-chart-dialog{width:min(920px,calc(100vw - 28px));max-width:920px;max-height:90dvh;padding:0;overflow:hidden;border-radius:24px}
+.market-chart-dialog{width:min(920px,calc(100vw - 28px));max-width:920px;max-height:90dvh;padding:0;overflow:hidden;border-radius:12px}
 .market-chart-dialog header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 26px;border-bottom:1px solid var(--line-soft);background:var(--glaze-2)}
 .market-chart-dialog header small{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--cobalt)}
 .market-chart-dialog h2{font-size:26px;margin:4px 0 0}
@@ -189,7 +135,7 @@
 .market-chart-dialog header button{width:38px;height:38px;border-radius:50%;background:var(--cobalt-wash);color:var(--cobalt);font-size:22px;line-height:1;transition:transform .25s var(--ease-out),background .2s,color .2s}
 .market-chart-dialog header button:hover{transform:rotate(90deg);background:var(--cobalt);color:var(--on-accent)}
 .overlay-metrics{display:flex;align-items:center;gap:34px;flex-wrap:wrap;padding:20px 26px;font-size:12px;color:var(--muted)}
-.overlay-metrics strong{display:block;margin-top:4px;font-family:var(--serif);font-size:24px;font-weight:900;color:var(--ink);font-variant-numeric:tabular-nums lining-nums}
+.overlay-metrics strong{display:block;margin-top:4px;font-family:var(--sans);font-size:20px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums lining-nums}
 .overlay-metrics .copy-ca{margin-left:auto}
 .overlay-chart{position:relative;height:340px;margin:0 16px;border:1px solid var(--line-soft);border-radius:14px;background:var(--glaze-2);overflow:hidden}
 .overlay-chart canvas{display:block;width:100%;height:100%;touch-action:none}
