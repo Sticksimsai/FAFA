@@ -5,7 +5,7 @@ import {signLoginChallenge} from '../client/wallet-login.js';
 
 test('SIWS uses a separate alphanumeric nonce and canonical statement separator',()=>{
  const message=createSignInMessage({origin:'https://tryfafa.xyz',wallet:'wallet',nonce:'a0123456789bcdef',issuedAt:new Date('2026-10-31T00:00:00Z'),expiresAt:new Date('2026-10-31T00:05:00Z')});
- assert.equal(message,'https://tryfafa.xyz'.slice(8)+' wants you to sign in with your Solana account:\nwallet\n\nSign in to FAFA. This signature does not authorize a transaction.\n\nURI: https://tryfafa.xyz\nVersion: 1\nChain ID: solana:mainnet\nNonce: a0123456789bcdef\nIssued At: 2026-10-31T00:00:00.000Z\nExpiration Time: 2026-10-31T00:05:00.000Z');
+ assert.equal(message,'https://tryfafa.xyz'.slice(8)+' wants you to sign in with your Solana account:\nwallet\n\nSign in to BAOFU. This signature does not authorize a transaction.\n\nURI: https://tryfafa.xyz\nVersion: 1\nChain ID: solana:mainnet\nNonce: a0123456789bcdef\nIssued At: 2026-10-31T00:00:00.000Z\nExpiration Time: 2026-10-31T00:05:00.000Z');
  assert.throws(()=>createSignInMessage({nonce:'bad-uuid-nonce'}),/nonce/);
 });
 test('login immediately opens signature prompt and verifies the exact challenge',async()=>{
