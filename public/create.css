@@ -174,3 +174,6 @@
   .create-actions button{padding:14px 12px;font-size:13px}
   .quote-option{padding:14px}
 }
+
+.vanity-option{margin-top:22px}
+#vanity-status{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}

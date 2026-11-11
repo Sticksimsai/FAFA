@@ -202,6 +202,15 @@ select:hover{border-color:var(--cobalt)}
 .bottom-note button{color:var(--cobalt);font-weight:700;font-size:14px;white-space:nowrap}
 .bottom-note button:hover{text-decoration:underline;text-underline-offset:4px}
 
+/* ── Bonding-curve progress ─────────────────────────── */
+.curve-bar{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:6px 10px;margin-top:12px;font-size:12px;color:var(--muted)}
+.curve-bar b{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.curve-bar i{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line-soft);overflow:hidden}
+.curve-bar em{display:block;height:100%;width:0;border-radius:3px;background:var(--cobalt);transition:width .8s var(--ease-out)}
+.curve-bar.is-done b{color:var(--jade)}
+.curve-bar.is-done em{background:var(--jade)}
+.tabs button i{margin-left:4px;font-style:normal;font-weight:600;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+
 /* ── Footer ─────────────────────────────────────────── */
 body>footer{
   position:relative;

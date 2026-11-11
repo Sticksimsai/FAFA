@@ -21,4 +21,7 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS last_checked_at timestamptz;
 CREATE INDEX IF NOT EXISTS orders_wallet_idx ON orders(wallet,created_at DESC);
 CREATE TABLE IF NOT EXISTS tokens (mint text PRIMARY KEY,wallet text NOT NULL,name text NOT NULL,symbol text NOT NULL,description text NOT NULL,image text NOT NULL,uri text NOT NULL,signature text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
 ALTER TABLE tokens ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}';
+CREATE TABLE IF NOT EXISTS token_stats (mint text PRIMARY KEY,progress double precision,complete boolean,market_cap_usd double precision,volume_usd double precision,holders integer,updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS comments (id uuid PRIMARY KEY,mint text NOT NULL,wallet text NOT NULL,body text NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS comments_mint_idx ON comments(mint,created_at DESC);
 `)}
