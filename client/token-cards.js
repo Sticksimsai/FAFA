@@ -2,7 +2,7 @@ import {CandleChart} from './chart.js';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const short=m=>m.slice(0,5)+'…'+m.slice(-5),cache=new Map();
-let context,observer,queue=[],running=0,dialog,chart,selected,justSaved=null,entered=false;
+let context,observer,queue=[],running=0,dialog,chart,selected,entered=false;
 const t=(cn,en)=>context?.en?en:cn;
 const money=v=>Number.isFinite(v)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',notation:'compact',maximumFractionDigits:2}).format(v):'—';
 const count=v=>v==null?'—':new Intl.NumberFormat(context?.en?'en':'zh-CN',{notation:'compact',maximumFractionDigits:1}).format(v);
@@ -11,57 +11,55 @@ const still=()=>document.documentElement.classList.contains('motion-off')||match
 // Curve stage shown on cards and the token page. Unknown stays a dash.
 export function curveLabel(progress,graduated,en){return graduated?(en?'Graduated':'已毕业'):Number.isFinite(progress)?(progress*100).toFixed(progress>=.995?0:1)+'%':'—'}
 function curveBar(stats,en){const p=stats?.graduated?1:Number.isFinite(stats?.progress)?stats.progress:null;return `<div class="curve-bar${stats?.graduated?' is-done':''}" data-curve><span>${en?'Bonding curve':'毕业进度'}</span><b data-progress>${curveLabel(stats?.progress,stats?.graduated,en)}</b><i><em style="width:${p==null?0:(p*100).toFixed(1)}%"></em></i></div>`}
+const age=(at,en)=>{const s=Math.max(0,(Date.now()-new Date(at))/1000);return s<60?Math.floor(s)+(en?'s':'秒'):s<3600?Math.floor(s/60)+(en?'m':'分'):s<86400?Math.floor(s/3600)+(en?'h':'时'):Math.floor(s/86400)+(en?'d':'天')};
 export function tokenCard(x,saved,en,index=0){
- const txt=(cn,eng)=>en?eng:cn,quote=x.metadata?.quoteAsset||(x.metadata?.engine==='meteora-dbc'?'BABA':x.metadata?.engine==='raydium-cpmm'?'BABAx':'SOL'),venue=x.metadata?.engine==='meteora-dbc'?'Meteora':x.metadata?.engine==='raydium-cpmm'?'Raydium':'Pump.fun';
- const featured=!!x.metadata?.featured,stamp=saved&&x.mint===justSaved;
- return `<article class="card market-card is-loading${featured?' is-featured':''}" data-market-card="${esc(x.mint)}" data-tilt style="--i:${Math.min(index,8)}"><div class="market-card-head"><a class="market-identity" href="/token/${esc(x.mint)}"><span class="market-avatar">${x.image?`<img src="${esc(x.image)}" loading="lazy" alt="">`:'富'}</span><span><strong>${esc(x.name)}</strong><small>${esc(x.symbol)}</small></span></a><button class="save ${saved?'saved':''}${stamp?' stamp':''}" data-save="${esc(x.mint)}" aria-label="${txt('加入自选','Watchlist')}" aria-pressed="${saved}">${saved?'★':'☆'}</button></div><div class="market-pair"><span class="pair-dot"></span><b>${esc(x.symbol||'TOKEN')} / <span data-pair-quote>${esc(quote)}</span></b><span>${venue}</span>${featured?'<em>BAOFU</em>':''}</div>${curveBar(x.stats,en)}<button class="market-preview" data-chart="${esc(x.mint)}" aria-label="${txt('展开行情图表','Expand market chart')} ${esc(x.name)}"><span class="preview-values"><span><small>${txt('市值 · 美元','MARKET CAP · USD')}</small><strong data-cap>—</strong></span><span class="preview-change" data-change>—</span></span><span class="mini-chart" data-spark>${waiting(txt('行情加载中','Loading market'),true)}</span><span class="preview-foot"><span data-window>${txt('已加载成交窗口','Loaded trade window')}</span><span>↗ ${txt('展开图表','Expand chart')}</span></span></button><div class="market-card-metrics"><span><small>${txt('持币地址','Holders')}</small><strong data-holders title="${txt('非零余额独立地址，含协议金库','Unique nonzero-balance owners, including protocol vaults')}">—</strong></span><span><small>${txt('窗口成交额','Window volume')}</small><strong data-volume>—</strong></span><span><small>${txt('买入 / 卖出','Buys / Sells')}</small><strong data-count>—</strong></span></div><p class="market-description">${esc(x.description||txt('社区的新故事，从这里开始。','A new community story starts here.'))}</p><div class="market-card-footer"><button class="copy-ca" data-copy-ca="${esc(x.mint)}" title="${esc(x.mint)}" aria-label="${txt('复制合约地址','Copy contract address')}"><span>CA</span><code>${esc(short(x.mint))}</code><span aria-hidden="true" data-copy-mark>⧉</span></button><a href="/token/${esc(x.mint)}">${txt('交易终端','Trade')} ↗</a></div><span class="market-card-status" data-card-status></span></article>`;
+ const txt=(cn,eng)=>en?eng:cn,venue=x.metadata?.engine==='meteora-dbc'?'Meteora':x.metadata?.engine==='raydium-cpmm'?'Raydium':'Pump.fun';
+ return `<article class="card market-card is-loading" data-market-card="${esc(x.mint)}"><span class="mini-chart" data-spark aria-hidden="true"></span><div class="market-card-head"><a class="market-identity" href="/token/${esc(x.mint)}"><span class="market-avatar">${x.image?`<img src="${esc(x.image)}" loading="lazy" alt="">`:'富'}</span><span><strong>${esc(x.name)}</strong><small><b>${esc(x.symbol)}</b><span>${venue}</span>${x.created_at?`<time data-age="${esc(x.created_at)}">${age(x.created_at,en)}</time>`:''}</small></span></a><button class="save ${saved?'saved':''}" data-save="${esc(x.mint)}" aria-label="${txt('加入自选','Watchlist')}" aria-pressed="${saved}">${saved?'★':'☆'}</button></div><div class="market-figures"><small>${txt('市值','MC')}</small><strong data-cap>—</strong><span class="preview-change" data-change></span></div><div class="market-card-metrics"><span>${txt('持币','Holders')}<strong data-holders>—</strong></span><span>${txt('成交','Vol')}<strong data-volume>—</strong></span><span>${txt('进度','Curve')}<strong data-progress>${curveLabel(x.stats?.progress,x.stats?.graduated,en)}</strong></span></div><div class="flow is-empty" data-flow title="${txt('买入 / 卖出笔数','Buys / sells')}"><b data-buys>—</b><i><em></em></i><b data-sells>—</b></div><div class="market-card-footer"><button class="copy-ca" data-copy-ca="${esc(x.mint)}" title="${esc(x.mint)}" aria-label="${txt('复制合约地址','Copy contract address')}"><code>${esc(short(x.mint))}</code><span aria-hidden="true" data-copy-mark>⧉</span></button><button class="card-chart" data-chart="${esc(x.mint)}">${txt('图表','Chart')}</button><a href="/token/${esc(x.mint)}">${txt('交易','Trade')}</a></div>${curveBar(x.stats,en)}</article>`;
 }
 
-// Placeholder shown while a chart is loading or has nothing to draw.
-function waiting(label,busy=false){return `<span class="chart-wait${busy?' is-busy':''}"><svg viewBox="0 0 400 110" preserveAspectRatio="none" aria-hidden="true"><path d="M0 78 C50 60 80 88 130 70 S210 40 260 58 S340 80 400 46" pathLength="1"/></svg><span>${label}</span></span>`}
-
-function spark(data,mint){
- const points=[...data.trades].reverse();
- if(points.length<2)return waiting(data.marketAvailable?t('成交不足，等待图表','Awaiting more trades'):t('行情暂不可用','Market unavailable'));
+function spark(data){
+ const points=[...data.trades].reverse();if(points.length<2)return '';
  const lo=Math.min(...points.map(x=>x.price)),hi=Math.max(...points.map(x=>x.price)),span=hi-lo||hi*.1||1,start=points[0].time,end=points.at(-1).time;
- const xy=points.map((p,i)=>[(end>start?(p.time-start)/(end-start):i/(points.length-1))*384,92-(p.price-lo)/span*64]);
- const path=xy.map(([x,y],i)=>(i?'L':'M')+x.toFixed(2)+','+y.toFixed(2)).join(' '),id='fill-'+mint,[lx,ly]=xy.at(-1);
- const tone=data.changePercent==null?'':data.changePercent<0?'negative':'positive';
- return `<svg viewBox="0 0 400 110" preserveAspectRatio="none" aria-hidden="true" class="${tone}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="currentColor" stop-opacity=".22"/><stop offset="100%" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><path class="spark-grid" d="M0 35 H400 M0 70 H400 M0 105 H400"/><path class="spark-wash" d="${path} L${lx.toFixed(2)} 110 L0 110 Z" fill="url(#${id})"/><path class="spark-bleed" d="${path}" vector-effect="non-scaling-stroke"/><path class="spark-line" d="${path}" vector-effect="non-scaling-stroke"/></svg><i class="spark-dot ${tone}" style="left:${(lx/4).toFixed(2)}%;top:${(ly/1.1).toFixed(2)}%"></i>`;
+ const xy=points.map((p,i)=>[(end>start?(p.time-start)/(end-start):i/(points.length-1))*392,76-(p.price-lo)/span*68]);
+ const path=xy.map(([x,y],i)=>(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1)).join(' '),[lx,ly]=xy.at(-1);
+ return `<svg viewBox="0 0 400 84" preserveAspectRatio="none"><path class="spark-line" d="${path}" vector-effect="non-scaling-stroke"/></svg><i class="spark-dot" style="left:${(lx/4).toFixed(2)}%;top:${(ly/.84).toFixed(2)}%"></i>`;
 }
 
-// Roll a currency figure up to its value the first time a card receives data.
-function rollUp(node,value){
- if(!Number.isFinite(value)||still()){node.textContent=money(value);return}
- const began=performance.now(),length=750;
- const step=now=>{if(!node.isConnected)return;const p=Math.min(1,(now-began)/length),eased=1-Math.pow(1-p,4);node.textContent=money(value*eased);if(p<1)requestAnimationFrame(step);else node.textContent=money(value)};
+// Move a figure from its last value to the new one, flashing green or red.
+function setFigure(node,value){
+ const from=node._value;node._value=value;
+ if(!Number.isFinite(value)){node.textContent='—';return}
+ if(!Number.isFinite(from)||from===value||still()){node.textContent=money(value);return}
+ node.classList.remove('tick-up','tick-down');void node.offsetWidth;node.classList.add(value>from?'tick-up':'tick-down');
+ const began=performance.now();
+ const step=now=>{if(!node.isConnected||node._value!==value)return;const p=Math.min(1,(now-began)/500);node.textContent=money(from+(value-from)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(step)};
  requestAnimationFrame(step);
 }
 
 function populate(node,data,fresh=false){
- node.classList.remove('is-loading');
- const bar=node.querySelector('[data-curve]');if(bar&&data.marketAvailable){bar.classList.toggle('is-done',!!data.graduated);bar.querySelector('[data-progress]').textContent=curveLabel(data.progress,data.graduated,context?.en);bar.querySelector('em').style.width=(data.graduated?100:Number.isFinite(data.progress)?data.progress*100:0).toFixed(1)+'%';const item=context?.items?.find(x=>x.mint===node.dataset.marketCard);if(item)item.stats={...item.stats,progress:data.progress,graduated:data.graduated,marketCapUsd:data.marketCapUsd,volumeUsd:data.volumeUsd,holders:data.holders}}node.classList.toggle('is-fresh',fresh);
- if(fresh)rollUp(node.querySelector('[data-cap]'),data.marketCapUsd);else node.querySelector('[data-cap]').textContent=money(data.marketCapUsd);
- const change=node.querySelector('[data-change]'),down=data.changePercent<0;
- change.textContent=data.changePercent==null?'—':(down?'▼ ':'▲ ')+(down?'':'+')+data.changePercent.toFixed(2)+'%';
- change.classList.toggle('negative',down);change.classList.toggle('positive',data.changePercent!=null&&!down);
- node.querySelector('[data-holders]').textContent=count(data.holders);
- node.querySelector('[data-volume]').textContent=money(data.volumeUsd);
- node.querySelector('[data-count]').textContent=data.marketAvailable?data.buys+' / '+data.sells:'—';
- node.querySelector('[data-spark]').innerHTML=spark(data,node.dataset.marketCard);
- if(data.quoteSymbol)node.querySelector('[data-pair-quote]').textContent=data.quoteSymbol;
- node.querySelector('[data-window]').textContent=(data.chartUnit==='USD MCAP'?t('美元市值','USD MCAP'):data.chartUnit+' '+t('价格','price'))+' · '+t('已加载窗口','loaded window');
- node.querySelector('[data-card-status]').textContent=(data.partial?t('部分成交 · ','Partial trades · '):'')+(data.updatedAt?t('更新于 ','Updated ')+new Date(data.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):t('数据暂不可用','Data unavailable'));
+ node.classList.remove('is-loading');node.classList.toggle('is-fresh',fresh);
+ const down=data.changePercent<0;node.classList.toggle('down',down);node.classList.toggle('up',data.changePercent>0);
+ if(data.marketAvailable){const bar=node.querySelector('[data-curve]');bar.classList.toggle('is-done',!!data.graduated);bar.querySelector('em').style.width=(data.graduated?100:Number.isFinite(data.progress)?data.progress*100:0).toFixed(1)+'%';node.querySelector('.market-card-metrics [data-progress]').textContent=curveLabel(data.progress,data.graduated,context?.en);const item=context?.items?.find(x=>x.mint===node.dataset.marketCard);if(item)item.stats={...item.stats,progress:data.progress,graduated:data.graduated,marketCapUsd:data.marketCapUsd,volumeUsd:data.volumeUsd,holders:data.holders}}
+ setFigure(node.querySelector('[data-cap]'),data.marketCapUsd);
+ const change=node.querySelector('[data-change]');change.textContent=data.changePercent==null?'':(down?'':'+')+data.changePercent.toFixed(2)+'%';change.classList.toggle('negative',down);change.classList.toggle('positive',data.changePercent>0);
+ node.querySelector('[data-holders]').textContent=count(data.holders);node.querySelector('[data-volume]').textContent=money(data.volumeUsd);
+ const flow=node.querySelector('[data-flow]'),total=data.marketAvailable?data.buys+data.sells:0;flow.classList.toggle('is-empty',!total);flow.querySelector('[data-buys]').textContent=total?data.buys:'—';flow.querySelector('[data-sells]').textContent=total?data.sells:'—';flow.querySelector('em').style.width=(total?data.buys/total*100:50).toFixed(1)+'%';
+ node.querySelector('[data-spark]').innerHTML=spark(data);
 }
 
-async function load(mint){const hit=cache.get(mint);if(hit&&Date.now()-hit.at<60000)return hit.data;const r=await fetch('/api/token/'+encodeURIComponent(mint)+'/summary',{signal:AbortSignal.timeout(25000)});if(!r.ok)throw new Error('Market unavailable');const data=await r.json();cache.set(mint,{at:Date.now(),data});while(cache.size>150)cache.delete(cache.keys().next().value);return data;}
-async function drain(){while(running<2&&queue.length){const node=queue.shift();if(!node.isConnected)continue;running++;load(node.dataset.marketCard).then(d=>{if(node.isConnected)populate(node,d,true)}).catch(()=>{if(node.isConnected){node.classList.remove('is-loading');node.querySelector('[data-spark]').innerHTML=waiting(t('行情暂不可用 · 点击重试','Market unavailable · Click to retry'));node.querySelector('[data-card-status]').textContent=t('无法读取最新数据','Latest data unavailable')}}).finally(()=>{running--;drain()});}}
+async function load(mint,force=false){const hit=cache.get(mint);if(!force&&hit&&Date.now()-hit.at<60000)return hit.data;const r=await fetch('/api/token/'+encodeURIComponent(mint)+'/summary',{signal:AbortSignal.timeout(25000)});if(!r.ok)throw new Error('Market unavailable');const data=await r.json();cache.set(mint,{at:Date.now(),data});while(cache.size>150)cache.delete(cache.keys().next().value);return data;}
+async function drain(){while(running<2&&queue.length){const node=queue.shift();if(!node.isConnected)continue;running++;load(node.dataset.marketCard).then(d=>{if(node.isConnected)populate(node,d,true)}).catch(()=>{if(node.isConnected)node.classList.remove('is-loading')}).finally(()=>{running--;drain()});}}
+
+// Cards on screen re-read their market every 25 seconds, a few at a time; ages tick in between.
+let seen=new Set();
+const watcher=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{for(const e of entries)e.isIntersecting?seen.add(e.target):seen.delete(e.target)});
+if(typeof document!=='undefined'){setInterval(()=>{if(document.hidden)return;[...seen].filter(n=>n.isConnected&&!n.classList.contains('is-loading')).slice(0,12).forEach((node,i)=>setTimeout(()=>load(node.dataset.marketCard,true).then(d=>{if(node.isConnected)populate(node,d)}).catch(()=>{}),i*400))},25000);setInterval(()=>document.querySelectorAll('[data-age]').forEach(n=>n.textContent=age(n.dataset.age,context?.en)),1000)}
 
 export function mountTokenCards(ctx){
- context=ctx;observer?.disconnect();queue=[];justSaved=null;
+ context=ctx;observer?.disconnect();queue=[];
  observer=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){observer.unobserve(e.target);queue.push(e.target)}drain()},{rootMargin:'80px'});
  const nodes=document.querySelectorAll('[data-market-card]');
- nodes.forEach(node=>{const hit=cache.get(node.dataset.marketCard);if(hit&&Date.now()-hit.at<60000)populate(node,hit.data);else observer.observe(node)});
+ seen=new Set();watcher?.disconnect();nodes.forEach(node=>{watcher?.observe(node);const hit=cache.get(node.dataset.marketCard);if(hit&&Date.now()-hit.at<60000)populate(node,hit.data);else observer.observe(node)});
  // The grid re-renders on every keystroke and language switch; only the first arrival is choreographed.
  if(!entered&&nodes.length){entered=true;const grid=nodes[0].parentElement;grid.classList.add('is-entering');setTimeout(()=>grid.classList.remove('is-entering'),1600)}
 }
@@ -71,17 +69,8 @@ async function overlay(mint){selected=mint;if(!dialog){dialog=document.createEle
 function confirmCopy(button){const mark=button.querySelector('[data-copy-mark]');if(!mark)return;clearTimeout(button._copied);mark.textContent='✓';button.classList.add('copied');button._copied=setTimeout(()=>{mark.textContent='⧉';button.classList.remove('copied')},1400)}
 
 document.addEventListener('click',async e=>{
- const save=e.target.closest('[data-save]');if(save&&save.getAttribute('aria-pressed')!=='true')justSaved=save.dataset.save;
  const copy=e.target.closest('[data-copy-ca]');
  if(copy){try{await navigator.clipboard.writeText(copy.dataset.copyCa);confirmCopy(copy);context?.toast(t('合约地址已复制','Contract address copied'));}catch{context?.toast(t('无法复制，请在交易终端查看完整地址','Copy unavailable. Open the terminal for the full address.'));}return;}
  const button=e.target.closest('[data-chart]');if(button)overlay(button.dataset.chart);
 });
 
-// Pointer position for the gold edge on anything marked data-tilt.
-if(typeof document!=='undefined'){
- let active=null,frame=0,point=null;
- const release=()=>{if(!active)return;active.classList.remove('is-tilting');for(const p of ['--mx','--my'])active.style.removeProperty(p);active=null};
- const apply=()=>{frame=0;if(!active||!point)return;const r=active.getBoundingClientRect(),px=Math.min(1,Math.max(0,(point.x-r.left)/r.width)),py=Math.min(1,Math.max(0,(point.y-r.top)/r.height));active.style.setProperty('--mx',(px*100).toFixed(1)+'%');active.style.setProperty('--my',(py*100).toFixed(1)+'%')};
- document.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'||still()){release();return}const card=e.target.closest?.('[data-tilt]');if(card!==active){release();active=card;active?.classList.add('is-tilting')}if(!active)return;point={x:e.clientX,y:e.clientY};if(!frame)frame=requestAnimationFrame(apply)},{passive:true});
- document.documentElement.addEventListener('pointerleave',release);window.addEventListener('blur',release);window.addEventListener('scroll',release,{passive:true});
-}

@@ -124,7 +124,7 @@
   background:var(--glaze);border:1px solid var(--line);border-radius:12px;
   box-shadow:var(--shadow-2);
 }
-.preview-cover{position:relative;height:150px;padding:20px 22px;background:var(--night) url('/assets/hero-characters.webp') no-repeat 100% 0/200% 200%;color:#fff}
+.preview-cover{position:relative;height:150px;padding:20px 22px;background:var(--night);color:#fff}
 .preview-cover>span:first-child{position:relative;font-size:11px;font-weight:700;letter-spacing:.14em;color:#e9cf8f}
 .preview-motif{display:none;position:absolute;left:20px;top:44px;font-family:var(--sans);font-size:64px;font-weight:700;line-height:1;color:#ffffff1f}
 #preview-avatar{position:absolute;z-index:1;left:22px;bottom:-30px;display:grid;place-items:center;overflow:hidden;width:76px;height:76px;border-radius:10px;background:var(--glaze-2);border:3px solid var(--glaze);color:var(--cobalt)}
