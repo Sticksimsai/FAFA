@@ -28,7 +28,7 @@ function crown(){
 
 function populate(node,data,fresh=false){
  node.classList.remove('is-loading');
- const cap=node.querySelector('[data-cap]'),was=cap._value;cap._value=data.marketCapUsd;cap.textContent=data.pending?t('即将上线','launching soon'):money(data.marketCapUsd);
+ const cap=node.querySelector('[data-cap]'),was=cap._value;cap._value=data.marketCapUsd;cap.textContent=money(data.marketCapUsd);
  if(!fresh&&Number.isFinite(was)&&Number.isFinite(data.marketCapUsd)&&was!==data.marketCapUsd&&!still()){node.classList.remove('shake','fell');void node.offsetWidth;node.classList.add('shake');node.classList.toggle('fell',data.marketCapUsd<was);setTimeout(()=>node.classList.remove('shake','fell'),700)}
  const down=data.changePercent<0,change=node.querySelector('[data-change]');change.textContent=data.changePercent==null?'':'('+(down?'':'+')+data.changePercent.toFixed(1)+'%)';change.classList.toggle('negative',down);
  if(data.marketAvailable){const bar=node.querySelector('[data-curve]');bar.classList.toggle('is-done',!!data.graduated);bar.querySelector('em').style.width=(data.graduated?100:Number.isFinite(data.progress)?data.progress*100:0).toFixed(1)+'%';node.querySelector('.badge-curve').textContent=data.graduated||Number.isFinite(data.progress)?'['+curveLabel(data.progress,data.graduated,context?.en)+']':'';const item=context?.items?.find(x=>x.mint===node.dataset.marketCard);if(item){item.stats={...item.stats,progress:data.progress,graduated:data.graduated,marketCapUsd:data.marketCapUsd,volumeUsd:data.volumeUsd,holders:data.holders};crown()}}

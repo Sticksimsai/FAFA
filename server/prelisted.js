@@ -5,8 +5,8 @@ import {PUMP_BABA_MINT} from './featured-token.js';
 
 const METAPLEX=new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
 export const prelisted=new Map([['GMHhtMQQJRsowoj4iKVe1AgXiEkZQMHheeys4f4kpump',{
- mint:'GMHhtMQQJRsowoj4iKVe1AgXiEkZQMHheeys4f4kpump',name:'即将上线',symbol:'BABA 配对',
- description:'与 BABA 股票配对的 Pump.fun 代币。上线后这里会自动显示图表和成交。',image:'/favicon.png',
+ mint:'GMHhtMQQJRsowoj4iKVe1AgXiEkZQMHheeys4f4kpump',name:'GMHh…kpump',symbol:'BABA 配对',
+ description:'与 BABA 股票配对的 Pump.fun 代币。',image:'/favicon.png',
  wallet:'',uri:'',created_at:null,signature:null,
  metadata:{engine:'pump.fun',quoteMint:PUMP_BABA_MINT,quoteAsset:'BABA',imported:true,featured:true,prelisted:true,pending:true}
 }]]);
