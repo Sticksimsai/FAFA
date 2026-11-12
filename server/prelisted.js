@@ -19,10 +19,17 @@ function metaplex(data){ // key(1) update authority(32) mint(32) then three leng
 }
 const web=u=>{u=clean(u);return u.startsWith('ipfs://')?'https://ipfs.io/ipfs/'+u.slice(7).replace(/^ipfs\//,''):u};
 // The token's own picture, fetched once and served from this site (pages only load images from here).
+// IPFS content is the same on every gateway, so a busy or rate-limited one is skipped.
+const GATEWAYS=['https://ipfs.io/ipfs/','https://dweb.link/ipfs/','https://gateway.pinata.cloud/ipfs/','https://w3s.link/ipfs/','https://4everland.io/ipfs/'];
+async function get(url,ms){
+ const cid=url.match(/\/ipfs\/([A-Za-z0-9]{40,}(?:\/[^?#]*)?)/)?.[1],urls=cid?[url,...GATEWAYS.map(g=>g+cid).filter(u=>u!==url)]:[url];let last='';
+ for(const u of urls){try{const r=await fetch(u,{signal:AbortSignal.timeout(ms),redirect:'follow',headers:{accept:'*/*','user-agent':'baofu-metadata/1.0'}});if(r.ok)return r;last=new URL(u).host+' '+r.status}catch(e){last=new URL(u).host+' '+e.name}}
+ throw new Error(last);
+}
 async function picture(uri){
- const meta=await fetch(web(uri),{signal:AbortSignal.timeout(8000),redirect:'follow'});if(!meta.ok)throw new Error('metadata '+meta.status);
+ const meta=await get(web(uri),8000).catch(e=>{throw new Error('metadata '+e.message)});
  const json=await meta.json(),src=web(json.image);if(!/^https:\/\//.test(src))throw new Error('no image in metadata');
- const r=await fetch(src,{signal:AbortSignal.timeout(12000),redirect:'follow'});if(!r.ok)throw new Error('image '+r.status);
+ const r=await get(src,12000).catch(e=>{throw new Error('image '+e.message)});
  const type=(r.headers.get('content-type')||'').split(';')[0].trim();if(!/^image\/(png|jpeg|gif|webp|avif)$/.test(type))throw new Error('image type '+type);
  const bytes=Buffer.from(await r.arrayBuffer());if(!bytes.length||bytes.length>4e6)throw new Error('image size '+bytes.length);
  return {bytes,type,description:clean(json.description).slice(0,500)};
