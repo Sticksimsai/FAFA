@@ -222,3 +222,10 @@
 .comment header time{margin-left:auto;color:var(--muted)}
 .comment p{margin:6px 0 0;font-size:14px;line-height:1.65;color:var(--ink-2);overflow-wrap:anywhere;white-space:pre-wrap}
 @media(max-width:760px){#comment-form{padding:8px 16px 14px}.comment{padding:12px 16px}}
+
+/* paired asset: tap to copy its address */
+.pair-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--cobalt);border-radius:999px;background:var(--cobalt-wash);color:var(--ink-2);font-size:12px;white-space:nowrap;transition:background .15s,border-color .15s}
+.pair-chip b{color:var(--cobalt)}
+.pair-chip code{font-family:inherit;color:var(--muted)}
+.pair-chip:hover{background:#f2c24a33}
+.pair-chip.copied{border-color:var(--jade);color:var(--jade)}
