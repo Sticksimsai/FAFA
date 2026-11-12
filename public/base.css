@@ -385,3 +385,16 @@ h1,h2,h3{font-weight:700;letter-spacing:0}
 
 /* The network chip, pause button and status strip are kept in the page for the scripts that update them, but not shown. */
 .chain,#motion,.ticker{display:none!important}
+
+/* ── Main-token strip ───────────────────────────────── */
+.live-banner{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 12px;padding:8px 16px;background:var(--cobalt);color:var(--on-accent);font-size:13px;font-weight:600;line-height:1.4}
+.live-banner b{font-weight:900;font-size:15px}
+.live-banner .live-dot{width:8px;height:8px;border-radius:50%;background:#15803d;animation:live-dot 1.6s ease-in-out infinite}
+@keyframes live-dot{50%{opacity:.25}}
+.live-banner button{color:inherit;font-weight:600;max-width:100%;overflow-wrap:anywhere;text-align:left}
+.live-banner code{font-family:inherit}
+.live-banner i{font-style:normal}
+.live-banner button.copied{color:#14532d}
+.live-banner a{font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.motion-off .live-banner .live-dot{animation:none}
+@media(max-width:720px){.live-banner{font-size:12px}.live-banner code{font-size:11px}}
