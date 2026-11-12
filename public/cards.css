@@ -1,81 +1,40 @@
-/* Token cards. Compact rows of live figures: the price line sits behind the
-   numbers, figures flash when they move, and the buy/sell bar shifts with flow. */
+/* Token cards, early pump.fun style: picture on the left, plain lines of text,
+   no panel until hover. A card shakes when its market cap moves. */
+#cards{gap:8px 20px}
 .market-card{
-  --tone:var(--muted);
-  display:flex;flex-direction:column;gap:12px;min-width:0;
-  padding:14px 14px 0;overflow:hidden;isolation:isolate;
-  transition:border-color .15s,background .15s,transform .15s;
+  display:grid;grid-template-columns:104px minmax(0,1fr);gap:4px 12px;align-content:start;
+  padding:8px;background:none;border:1px solid transparent;
+  font-size:12px;line-height:1.6;color:var(--muted);
 }
-.market-card.up{--tone:var(--jade)}
-.market-card.down{--tone:var(--seal)}
-.market-card:hover,.market-card:focus-within{border-color:color-mix(in srgb,var(--tone) 55%,var(--line));background:#151a39}
-.market-card:active{transform:scale(.995)}
+.market-card:hover,.market-card:focus-within{border-color:var(--ink)}
+.market-card.shake{animation:shake .45s linear;background:var(--tick,#86efac26)}
+.market-card.shake.fell{--tick:#f8717126}
+@keyframes shake{0%,100%{transform:none}15%{transform:translate(-3px,1px) rotate(-.6deg)}30%{transform:translate(3px,-1px) rotate(.6deg)}45%{transform:translate(-2px,1px)}60%{transform:translate(2px,-1px)}80%{transform:translate(-1px,0)}}
+.motion-off .market-card.shake{animation:none}
 
-/* price line, behind the figures */
-.mini-chart{position:absolute;z-index:-1;left:46%;right:48px;top:12px;height:84px;color:var(--tone);opacity:.6;-webkit-mask-image:linear-gradient(90deg,transparent,#000 35%);mask-image:linear-gradient(90deg,transparent,#000 35%);transition:opacity .2s;pointer-events:none}
-.market-card:hover .mini-chart{opacity:1}
-.mini-chart svg{display:block;width:100%;height:100%;overflow:visible}
-.spark-line{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.spark-dot{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:var(--tone)}
-.spark-dot:after{content:'';position:absolute;inset:0;border-radius:50%;background:inherit;animation:dot-ring 2s ease-out infinite}
-@keyframes dot-ring{0%{transform:scale(1);opacity:.6}80%,100%{transform:scale(3.2);opacity:0}}
-.market-card.is-fresh .mini-chart svg{animation:line-wipe .9s cubic-bezier(.6,0,.2,1) both}
-@keyframes line-wipe{from{clip-path:inset(-8px 100% -8px 0)}to{clip-path:inset(-8px -8px -8px 0)}}
-.chart-wait{display:none}
-
-/* head */
-.market-card-head{display:flex;align-items:flex-start;gap:8px}
-.market-identity{display:flex;align-items:center;gap:12px;min-width:0;flex:1;color:var(--ink)}
-.market-identity>span:last-child{min-width:0}
-.market-identity strong{display:block;font-weight:700;font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.market-identity small{display:flex;gap:8px;margin-top:3px;font-size:12px;color:var(--muted);white-space:nowrap}
-.market-identity small b{font-weight:600;color:var(--ink-2)}
-.market-avatar{flex:none;display:grid;place-items:center;overflow:hidden;width:52px;height:52px;border-radius:8px;background:var(--glaze-2);border:1px solid var(--line);color:var(--cobalt);font-weight:900;font-size:22px}
-.market-avatar img{width:100%;height:100%;object-fit:cover;transition:transform .3s var(--ease-out)}
-.market-card:hover .market-avatar img{transform:scale(1.08)}
-.market-card .save{flex:none;width:30px;height:30px;border-radius:6px;color:var(--muted);font-size:17px;line-height:1;background:var(--glaze)}
-.market-card .save:hover,.market-card .save.saved{color:var(--cobalt)}
-
-/* figures */
-.market-figures{display:flex;align-items:baseline;gap:10px}
-.market-figures strong{font-size:24px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums}
-.market-figures small{font-size:11px;color:var(--muted)}
-.preview-change{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
-.preview-change.positive{color:var(--jade)}
-.preview-change.negative,.negative{color:var(--seal)}
-.tick-up{animation:tick-up .9s ease-out}
-.tick-down{animation:tick-down .9s ease-out}
-@keyframes tick-up{0%{color:var(--jade);text-shadow:0 0 14px #35d49b99}100%{text-shadow:none}}
-@keyframes tick-down{0%{color:var(--seal);text-shadow:0 0 14px #e8483a99}100%{text-shadow:none}}
-.market-card.is-loading [data-cap]{color:var(--line)}
-
-.market-card-metrics{display:flex;gap:16px;font-size:12px;color:var(--muted);white-space:nowrap}
-.market-card-metrics strong{margin-left:5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
-
-/* buys against sells */
-.flow{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
-.flow b:first-child{color:var(--jade)}
-.flow b:last-child{color:var(--seal)}
-.flow i{display:flex;gap:2px;height:4px;border-radius:2px;overflow:hidden;background:var(--line-soft)}
-.flow i em{display:block;height:100%;width:50%;background:var(--jade);transition:width .7s var(--ease-out)}
-.flow i:after{content:'';flex:1;background:var(--seal)}
-.flow.is-empty i em,.flow.is-empty i:after{background:transparent}
-
-.market-card-footer{display:flex;align-items:center;gap:6px}
-.market-card-footer>a{margin-left:auto;padding:7px 12px;border-radius:6px;background:var(--cobalt);color:var(--on-accent);font-size:12px;font-weight:700;white-space:nowrap;transition:background .15s}
-.market-card-footer>a:hover{background:var(--cobalt-deep)}
-.copy-ca,.card-chart{display:inline-flex;align-items:center;gap:6px;min-width:0;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--glaze-2);color:var(--ink-2);font-size:12px;white-space:nowrap;transition:border-color .15s,color .15s}
-.copy-ca:hover,.card-chart:hover{border-color:var(--cobalt);color:var(--cobalt)}
-.copy-ca code{font-family:inherit;font-size:12px;font-variant-numeric:tabular-nums}
-.copy-ca.copied{border-color:var(--jade);color:var(--jade)}
-
-/* curve progress runs along the bottom edge of the card */
-.market-card .curve-bar{display:block;margin:0 -14px;font-size:0}
+.market-card>.market-avatar{grid-row:1/span 2;display:grid;place-items:center;overflow:hidden;width:104px;height:104px;background:var(--glaze);color:var(--cobalt);font-weight:900;font-size:40px}
+.market-avatar img{width:100%;height:100%;object-fit:cover}
+.market-body{min-width:0;display:flex;flex-direction:column}
+.market-body>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.market-cap{color:var(--jade)}
+.market-cap [data-change].negative{color:var(--seal)}
+.market-cap .badge-curve{margin-left:6px;color:var(--cobalt)}
+.market-title{white-space:normal!important;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:var(--ink-2)}
+.market-title strong{color:var(--ink);font-weight:700}
+.market-card.is-loading [data-cap]{color:var(--muted)}
+.market-card .curve-bar{display:block;margin:4px 0 0;font-size:0}
 .market-card .curve-bar span,.market-card .curve-bar b{display:none}
-.market-card .curve-bar i{display:block;height:3px;border-radius:0}
-.market-card .curve-bar em{border-radius:0}
-
-.motion-off .tick-up,.motion-off .tick-down,.motion-off .spark-dot:after{animation:none}
+.market-card .curve-bar i{display:block;height:4px;border-radius:0;background:var(--line-soft)}
+.market-card .curve-bar em{border-radius:0;background:var(--jade)}
+.market-card .curve-bar.is-done em{background:var(--cobalt)}
+.market-actions{grid-column:2;display:flex;flex-wrap:wrap;gap:2px 12px}
+.market-actions button,.market-actions a{color:var(--muted);font-size:12px;white-space:nowrap}
+.market-actions button:hover,.market-actions a:hover{color:var(--ink)}
+.market-actions a{color:var(--cobalt)}
+.market-actions .save.saved{color:var(--cobalt)}
+.copy-ca.copied{color:var(--jade)!important}
+.overlay-metrics .copy-ca{padding:6px 9px;border:1px solid var(--line);color:var(--ink-2);font-size:12px}
+.preview-change.positive{color:var(--jade)}.negative{color:var(--seal)}
 
 /* ── Chart overlay ──────────────────────────────────── */
 .market-chart-dialog{width:min(920px,calc(100vw - 28px));max-width:920px;max-height:90dvh;padding:0;overflow:hidden;border-radius:12px}

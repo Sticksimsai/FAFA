@@ -1,29 +1,29 @@
-/* 暴富 BAOFU · night-market theme — shared foundations.
-   Indigo night, gold leaf, one cinnabar seal. Token names (--cobalt, --porcelain…)
+/* 暴富 BAOFU · shared foundations. Early pump.fun look in Chinese: slate page,
+   monospace figures, bracket links, green market caps, gold for the brand. Token names (--cobalt, --porcelain…)
    are kept from the first pass: --cobalt is the gold accent, --porcelain the page. */
 :root{
-  --porcelain:#0a0d1f;
-  --glaze:#131834;
-  --glaze-2:#0e1229;
-  --ink:#f4f0e3;
-  --ink-2:#c4c7de;
-  --muted:#8b91b6;
+  --porcelain:#1b1d28;
+  --glaze:#22252f;
+  --glaze-2:#16181f;
+  --ink:#ffffff;
+  --ink-2:#d1d5db;
+  --muted:#9ca3af;
   --cobalt:#f2c24a;
   --cobalt-deep:#ffd872;
   --cobalt-wash:#f2c24a1c;
   --on-accent:#1a1404;
-  --line:#2b3260;
-  --line-soft:#20264b;
-  --seal:#e8483a;
+  --line:#3a3e4d;
+  --line-soft:#2b2e3a;
+  --seal:#f87171;
   --seal-wash:#e8483a24;
-  --jade:#35d49b;
-  --jade-wash:#35d49b22;
+  --jade:#86efac;
+  --jade-wash:#86efac22;
   --gilt:#f2c24a;
   --gilt-wash:#f2c24a1c;
   --night:#080b1d;
-    --sans:"Instrument Sans","Noto Sans SC","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-  --r-card:10px;
-  --r-ctl:8px;
+    --sans:"IBM Plex Mono","Noto Sans SC","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --r-card:0px;
+  --r-ctl:4px;
   --shadow-1:none;
   --shadow-2:none;
   --ease-out:cubic-bezier(.16,1,.3,1);
@@ -63,7 +63,7 @@ body>header{
   height:60px;border-bottom:1px solid var(--line-soft);
   display:flex;align-items:center;gap:40px;
   padding:0 max(24px,calc((100vw - 1392px)/2));
-  background:#0a0d1fd9;
+  background:#1b1d28f2;
   backdrop-filter:blur(14px) saturate(1.4);
   -webkit-backdrop-filter:blur(14px) saturate(1.4);
 }
@@ -370,3 +370,15 @@ dialog .pairbox{padding:16px;background:var(--cobalt-wash);border-radius:12px;co
   body>footer>span:last-child{margin:0;width:100%}
   dialog{padding:22px;border-radius:20px}
 }
+
+/* ── Retro chrome ───────────────────────────────────── */
+.creator{color:#93c5fd}
+h1,h2,h3{font-weight:700;letter-spacing:0}
+.tabs{background:none;padding:0;gap:14px}
+.tabs button{padding:4px 0;border-radius:0;font-size:14px;color:var(--muted)}
+.tabs button:before{content:'['}.tabs button:after{content:']'}
+.tabs button.selected{background:none;box-shadow:none;color:var(--jade)}
+.tabs button i{color:inherit;opacity:.7}
+.plain{border-bottom:0;padding-bottom:0}
+.plain:before{content:'[ '}.plain:after{content:' ]'}
+.primary,.wallet{border-radius:4px}
