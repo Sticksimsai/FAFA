@@ -382,3 +382,6 @@ h1,h2,h3{font-weight:700;letter-spacing:0}
 .plain{border-bottom:0;padding-bottom:0}
 .plain:before{content:'[ '}.plain:after{content:' ]'}
 .primary,.wallet{border-radius:4px}
+
+/* The network chip, pause button and status strip are kept in the page for the scripts that update them, but not shown. */
+.chain,#motion,.ticker{display:none!important}
