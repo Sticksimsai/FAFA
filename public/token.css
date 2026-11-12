@@ -222,3 +222,5 @@
 .comment header time{margin-left:auto;color:var(--muted)}
 .comment p{margin:6px 0 0;font-size:14px;line-height:1.65;color:var(--ink-2);overflow-wrap:anywhere;white-space:pre-wrap}
 @media(max-width:760px){#comment-form{padding:8px 16px 14px}.comment{padding:12px 16px}}
+
+.prelist-note{margin:0 0 16px;padding:10px 14px;border:1px dashed var(--cobalt);color:var(--cobalt);font-size:14px}
